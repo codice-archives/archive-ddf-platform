@@ -1,5 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
 /**
  * Copyright (c) Codice Foundation
  *
@@ -11,23 +9,24 @@
  * <http://www.gnu.org/licenses/lgpl.html>.
  *
  **/
--->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <artifactId>ddf</artifactId>
-    <groupId>ddf</groupId>
-    <version>2.2.0.ALPHA5-SNAPSHOT</version>
-  </parent>
-  
-  <groupId>ddf.platform</groupId>
-  <artifactId>platform</artifactId>
-  <name>DDF Platform</name>
-  <packaging>pom</packaging>
-  
-  <modules>
-	  <module>platform-scheduler</module> 	  	
-      <module>platform-app</module>
-  </modules>
-  
-</project>
+package ddf.platform.scheduler;
+
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
+class FirstArgumentAnswer implements Answer<String> {
+
+    private String inputArg;
+
+    public String getInputArg() {
+        return inputArg;
+    }
+
+    @Override
+    public String answer(InvocationOnMock invocation) throws Throwable {
+        this.inputArg = (String) invocation.getArguments()[0];
+        return null;
+
+    }
+
+}

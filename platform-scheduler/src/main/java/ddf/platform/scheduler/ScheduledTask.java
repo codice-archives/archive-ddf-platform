@@ -1,5 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
 /**
  * Copyright (c) Codice Foundation
  *
@@ -11,23 +9,34 @@
  * <http://www.gnu.org/licenses/lgpl.html>.
  *
  **/
--->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <artifactId>ddf</artifactId>
-    <groupId>ddf</groupId>
-    <version>2.2.0.ALPHA5-SNAPSHOT</version>
-  </parent>
-  
-  <groupId>ddf.platform</groupId>
-  <artifactId>platform</artifactId>
-  <name>DDF Platform</name>
-  <packaging>pom</packaging>
-  
-  <modules>
-	  <module>platform-scheduler</module> 	  	
-      <module>platform-app</module>
-  </modules>
-  
-</project>
+package ddf.platform.scheduler;
+
+import java.util.Map;
+
+/**
+ * Interface used mostly for the Managed Service Factory that will create tasks
+ * on the fly and expose them as Services.
+ * 
+ * @author Ashraf Barakat
+ * @author ddf.isgs@lmco.com
+ * 
+ */
+public interface ScheduledTask {
+
+    /**
+     * Creates and schedules new task
+     */
+    public void newTask();
+    
+    /**
+     * Removes a task completely so that it does not run or exist.
+     */
+    public void deleteTask();
+
+    /**
+     * Updates an existing task with new properties.
+     * @param properties
+     */
+    public void updateTask(Map properties);
+
+}
