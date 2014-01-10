@@ -6,7 +6,6 @@
 *.idea
 *.checkstyle
 *.DS_Store
-node/
 node_modules/
 target/
 bin/

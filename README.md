@@ -11,15 +11,14 @@
  */
 -->
 <img src="https://tools.codice.org/wiki/download/attachments/3047458/ddf.jpg"/>
-# [Distributed Data Framework Security \(DDF-Security\)](https://tools.codice.org/wiki/display/DDF/DDF+Security+Application)
-[![Build Status](https://travis-ci.org/codice/ddf-security.png?branch=master)](https://travis-ci.org/codice/ddf-security)
-[![Coverity Scan Build Status](https://scan.coverity.com/projects/3599/badge.svg)](https://scan.coverity.com/projects/3599)
+# [Distributed Data Framework Platform \(DDF-Platform\)](https://tools.codice.org/wiki/display/DDF/DDF+Platform+Application)
+[![Build Status](https://travis-ci.org/codice/ddf.png)](https://travis-ci.org/codice/ddf-parent?branch=master)
 
 
-DDF-Security is an open source app integrated with the DDF integration framework. 
+DDF-Platform is an open source app integrated with the DDF integration framework. 
 
 ```
-git clone git://github.com/codice/ddf-security.git
+git clone git://github.com/codice/ddf-platform.git
 ```
 
 ## Additional information
