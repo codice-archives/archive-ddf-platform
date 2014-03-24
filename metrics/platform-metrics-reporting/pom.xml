@@ -87,6 +87,11 @@
 		<artifactId>xmlunit</artifactId>
 		<scope>test</scope>
 	</dependency>
+
+    <dependency>
+        <groupId>ddf.platform</groupId>
+        <artifactId>platform-configuration</artifactId>
+    </dependency>
             
   </dependencies>
   
