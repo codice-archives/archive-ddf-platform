@@ -169,9 +169,9 @@ public class ConfigurationWatcherImpl implements ConfigurationWatcher {
                 }
                 logConfigurationValue(ConfigurationManager.PORT, oldValue, port);
             } catch (NumberFormatException e) {
-                logger.warn("Error Updating Configuration value for '" + ConfigurationManager.PORT
-                        + "', not a valid Integer [" + portString
-                        + "] reverting back to old value [" + port + "]");
+                logger.warn(
+                        "Error Updating Configuration value for '{}', not a valid Integer [{}] reverting back to old value [{}]",
+                        new Object[] {ConfigurationManager.PORT, portString, port});
             }
 
             oldValue = protocol;
