@@ -163,7 +163,6 @@ public class ConfigurationWatcherImpTest {
                 try {
                     assertNull(method.invoke(configWatcher, null));
                 } catch (Exception e) {
-                    e.printStackTrace();
                     fail(e.getMessage());
                 }
             }

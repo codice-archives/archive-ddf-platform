@@ -158,19 +158,16 @@ public class ConfigurationWatcherImpl implements ConfigurationWatcher {
 
             String oldValue = hostname;
             hostname = properties.get(ConfigurationManager.HOST);
-            logger.debug("Updating Configuration value '{}' oldValue = [{}], newValue = [{}]",
-                    ConfigurationManager.HOST, oldValue, hostname);
+            logConfigurationValue(ConfigurationManager.HOST, oldValue, hostname);
 
             String portString = properties.get(ConfigurationManager.PORT);
             try {
-                Integer oldIntValue = port;
                 if (portString != null && !portString.isEmpty()) {
                     port = Integer.parseInt(portString);
                 } else {
                     port = null;
                 }
-                logger.debug("Updating Configuration value '{}' oldValue = [{}], newValue = [{}]",
-                        ConfigurationManager.PORT, oldIntValue, port);
+                logConfigurationValue(ConfigurationManager.PORT, oldValue, port);
             } catch (NumberFormatException e) {
                 logger.warn("Error Updating Configuration value for '" + ConfigurationManager.PORT
                         + "', not a valid Integer [" + portString
@@ -179,8 +176,7 @@ public class ConfigurationWatcherImpl implements ConfigurationWatcher {
 
             oldValue = protocol;
             protocol = properties.get(ConfigurationManager.PROTOCOL);
-            logger.debug("Updating Configuration value '{}' oldValue = [{}], newValue = [{}]",
-                    ConfigurationManager.PROTOCOL, oldValue, protocol);
+            logConfigurationValue(ConfigurationManager.PROTOCOL, oldValue, protocol);
             if (protocol != null) {
                 int index = protocol.indexOf(':');
                 schemeFromProtocol = index > -1 ? protocol.substring(0, index) : protocol;
@@ -190,23 +186,19 @@ public class ConfigurationWatcherImpl implements ConfigurationWatcher {
 
             oldValue = siteName;
             siteName = properties.get(ConfigurationManager.SITE_NAME);
-            logger.debug("Updating Configuration value '{}' oldValue = [{}], newValue = [{}]",
-                    ConfigurationManager.SITE_NAME, oldValue, siteName);
+            logConfigurationValue(ConfigurationManager.SITE_NAME, oldValue, siteName);
 
             oldValue = version;
             version = properties.get(ConfigurationManager.VERSION);
-            logger.debug("Updating Configuration value '{}' oldValue = [{}], newValue = [{}]",
-                    ConfigurationManager.VERSION, oldValue, version);
+            logConfigurationValue(ConfigurationManager.VERSION, oldValue, version);
 
             oldValue = organization;
             organization = properties.get(ConfigurationManager.ORGANIZATION);
-            logger.debug("Updating Configuration value '{}' oldValue = [{}], newValue = [{}]",
-                    ConfigurationManager.ORGANIZATION, oldValue, organization);
+            logConfigurationValue(ConfigurationManager.ORGANIZATION, oldValue, organization);
 
             oldValue = contactInfo;
             contactInfo = properties.get(ConfigurationManager.CONTACT);
-            logger.debug("Updating Configuration value '{}' oldValue = [{}], newValue = [{}]",
-                    ConfigurationManager.CONTACT, oldValue, contactInfo);
+            logConfigurationValue(ConfigurationManager.CONTACT, oldValue, contactInfo);
 
         } else {
             propertyMap.clear();
@@ -221,6 +213,11 @@ public class ConfigurationWatcherImpl implements ConfigurationWatcher {
             logger.debug("Platform Configuration Properties are NULL or empty, setting all values to null");
         }
         logger.exit();
+    }
+
+    protected void logConfigurationValue(String propertyName, Object oldValue, Object newValue) {
+        logger.debug("Updating Configuration value '{}' oldValue = [{}], newValue = [{}]",
+                new Object[] {propertyName, oldValue, newValue});
     }
 
 }
