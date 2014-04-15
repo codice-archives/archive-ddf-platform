@@ -16,7 +16,9 @@ package org.codice.ddf.configuration.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,15 +29,7 @@ public class ConfigurationWatcherImpTest {
 
     @Test
     public void testGetters() {
-        Map<String, String> properties = new HashMap<String, String>();
-        properties.put(ConfigurationManager.CONTACT, "contactValue");
-        properties.put(ConfigurationManager.HOST, "hostValue");
-        properties.put(ConfigurationManager.PORT, "8888");
-        properties.put(ConfigurationManager.ORGANIZATION, "orgValue");
-        properties.put(ConfigurationManager.PROTOCOL, "http://");
-        properties.put(ConfigurationManager.SITE_NAME, "siteNameValue");
-        properties.put(ConfigurationManager.VERSION, "versionValue");
-
+        Map<String, String> properties = getProperties();
         ConfigurationWatcherImpl configWatcher = new ConfigurationWatcherImpl();
         configWatcher.configurationUpdateCallback(properties);
 
@@ -47,6 +41,7 @@ public class ConfigurationWatcherImpTest {
         assertEquals(configWatcher.getSchemeFromProtocol(), "http");
         assertEquals(configWatcher.getSiteName(), "siteNameValue");
         assertEquals(configWatcher.getVersion(), "versionValue");
+        assertEquals(configWatcher.getConfigurationValue("BlahKey"), "BlahValue");
 
         Map<String, String> updatedProperties = new HashMap<String, String>();
         updatedProperties.put(ConfigurationManager.CONTACT, "updatedcontactValue");
@@ -56,6 +51,7 @@ public class ConfigurationWatcherImpTest {
         updatedProperties.put(ConfigurationManager.PROTOCOL, "https://");
         updatedProperties.put(ConfigurationManager.SITE_NAME, "updatedsiteNameValue");
         updatedProperties.put(ConfigurationManager.VERSION, "updatedversionValue");
+        updatedProperties.put("BlahKey", "UpdatedBlahValue");
         configWatcher.configurationUpdateCallback(updatedProperties);
 
         assertEquals(configWatcher.getContactEmailAddress(), "updatedcontactValue");
@@ -66,6 +62,7 @@ public class ConfigurationWatcherImpTest {
         assertEquals(configWatcher.getSchemeFromProtocol(), "https");
         assertEquals(configWatcher.getSiteName(), "updatedsiteNameValue");
         assertEquals(configWatcher.getVersion(), "updatedversionValue");
+        assertEquals(configWatcher.getConfigurationValue("BlahKey"), "UpdatedBlahValue");
     }
 
     @Test
@@ -140,6 +137,51 @@ public class ConfigurationWatcherImpTest {
         assertNull(configWatcher.getConfigurationValue("custom1"));
         assertEquals(configWatcher.getConfigurationValue("custom2"), "updatedcustom2Value");
 
+    }
+
+    @Test
+    public void testUpdateWithEmptyMap() {
+        setNullOrEmptyMapThenTest(new HashMap<String, String>());
+    }
+
+    @Test
+    public void testUpdateWithNullMap() {
+        setNullOrEmptyMapThenTest(null);
+    }
+
+    private void setNullOrEmptyMapThenTest(Map<String, String> emptyProps) {
+        Map<String, String> properties = getProperties();
+        ConfigurationWatcherImpl configWatcher = new ConfigurationWatcherImpl();
+        configWatcher.configurationUpdateCallback(properties);
+
+        configWatcher.configurationUpdateCallback(emptyProps);
+
+        // This will fail if new getters are added and the values are not set to null
+        Method[] methods = configWatcher.getClass().getDeclaredMethods();
+        for (Method method : methods) {
+            if (method.getParameterTypes().length == 0 && method.getName().startsWith("get")) {
+                try {
+                    assertNull(method.invoke(configWatcher, null));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail(e.getMessage());
+                }
+            }
+        }
+        assertNull(configWatcher.getConfigurationValue("BlahKey"));
+    }
+
+    private Map<String, String> getProperties() {
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put(ConfigurationManager.CONTACT, "contactValue");
+        properties.put(ConfigurationManager.HOST, "hostValue");
+        properties.put(ConfigurationManager.PORT, "8888");
+        properties.put(ConfigurationManager.ORGANIZATION, "orgValue");
+        properties.put(ConfigurationManager.PROTOCOL, "http://");
+        properties.put(ConfigurationManager.SITE_NAME, "siteNameValue");
+        properties.put(ConfigurationManager.VERSION, "versionValue");
+        properties.put("BlahKey", "BlahValue");
+        return properties;
     }
 
 }
