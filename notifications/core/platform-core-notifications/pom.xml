@@ -40,6 +40,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>ddf.cache.core</groupId>
+            <artifactId>platform-cassandra-embedded</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
         </dependency>
@@ -75,7 +80,8 @@
                         </Embed-Dependency>
                         <Embed-Transitive>true</Embed-Transitive>
                         <Private-Package>
-                            org.codice.ddf.notifications.impl
+                            org.codice.ddf.notifications.impl,
+                            org.codice.ddf.notifications.cassandra
                         </Private-Package>
                         <Export-Package>
                             org.codice.ddf.notifications
