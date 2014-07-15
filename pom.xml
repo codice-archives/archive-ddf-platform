@@ -4,7 +4,7 @@
  * Copyright (c) Codice Foundation
  *
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either
- * version 3 of the License, or any later version. 
+ * version 3 of the License, or any later version.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details. A copy of the GNU Lesser General Public License is distributed along with this program and can be found at
@@ -62,6 +62,12 @@
             <dependency>
                 <groupId>ddf.platform</groupId>
                 <artifactId>platform-commands</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ddf.platform</groupId>
+                <artifactId>platform-util</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -234,8 +240,8 @@
                 <artifactId>org.osgi.compendium</artifactId>
                 <version>${osgi.version}</version>
             </dependency>
-		<!-- WSS4J, a dependency of CXF depends on a version of Joda Time [1.6,2). 
-		  Before incrementing to 2.0 or beyond, ensure that the latest version of WSS4J 
+		<!-- WSS4J, a dependency of CXF depends on a version of Joda Time [1.6,2).
+		  Before incrementing to 2.0 or beyond, ensure that the latest version of WSS4J
 		  can use a version higher 2.0 or higher. -->
             <dependency>
                 <groupId>joda-time</groupId>
@@ -273,6 +279,7 @@
         <module>platform-scheduler</module>
         <module>security</module>
         <module>platform-commands</module>
+        <module>util</module>
         <module>platform-filter-delegate</module>
         <module>platform-app</module>
     </modules>
