@@ -22,7 +22,7 @@
      automatically installed when dropped inside the deploy folder. Note: This attribute doesn't
      affect feature descriptors that are installed from the command line or as part of the
      org.apache.karaf.features.cfg."
---> 
+-->
 <features name="${project.artifactId}-${project.version}">
 
   <!--
@@ -698,7 +698,7 @@
 
     <feature name="platform-util" install="manual" version="${project.version}"
         description="Utility class at the platform level.">
-        <bundle>mvn:ddf.platform/platform-util/${project.version}</bundle>
+        <bundle>mvn:ddf.platform/platform.utils/${project.version}</bundle>
     </feature>
 
 	<feature name="platform-app" install="auto" version="${project.version}"
