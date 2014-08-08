@@ -88,9 +88,10 @@ public class PersistentStoreImpl implements PersistentStore {
         if (type == null || type.isEmpty()) {
             return;
         }
-        if (properties == null || properties.isEmpty()) {
+        if (properties == null || properties.isEmpty() || properties.containsValue("guest")) {
             return;
         }
+
         LOGGER.debug("Adding entry of type {}", type);
         
         // Set Solr Core name to type and create/connect to Solr Core
