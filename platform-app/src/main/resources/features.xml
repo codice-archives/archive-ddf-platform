@@ -952,7 +952,7 @@
         <feature>platform-configuration</feature>
         <feature>action-core-api</feature>
         <feature>action-core-impl</feature>
-        <feature>cache-core</feature>
+        <!--  <feature>cache-core</feature> -->
         <feature>notifications-core</feature>
         <feature>mime-core</feature>
         <feature>mime-tika-resolver</feature>
