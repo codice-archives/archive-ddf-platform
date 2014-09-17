@@ -29,7 +29,6 @@
   <properties>
     <cas.client.version>3.1.10</cas.client.version>
     <cas.client.bundle.version>${cas.client.version}_1</cas.client.bundle.version>
-    <ddf.platform.app.version>2.5.0</ddf.platform.app.version>
   </properties>
 
   <dependencyManagement>
@@ -37,7 +36,7 @@
       <dependency>
         <groupId>ddf.platform</groupId>
         <artifactId>platform-configuration</artifactId>
-        <version>${ddf.platform.app.version}</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jasig.cas</groupId>
