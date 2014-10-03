@@ -725,6 +725,7 @@
         <bundle>mvn:org.ops4j.pax.swissbox/pax-swissbox-extender/${org.ops4j.pax.swissbox.version}</bundle>
         <bundle>mvn:org.apache.servicemix.bundles/org.apache.servicemix.bundles.saxon/${saxon.bundle.plugin}</bundle>
         <bundle>mvn:joda-time/joda-time/${joda-time.version}</bundle>
+        <bundle>mvn:org.osgi/org.osgi.compendium/4.3.1</bundle>
     </feature>
 
     <feature name="platform-security-session" install="auto" version="${project.version}" description="Custom Session Manager">
