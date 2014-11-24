@@ -50,12 +50,12 @@ public class PersistentStoreImpl implements PersistentStore {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(PersistentStoreImpl.class);
     
-    private String solrUrl;
+    private String solrUrl = "http://localhost:8181/solr";
     private SolrServer solrServer;
     private ConcurrentHashMap<String, SolrServer> coreSolrServers;
     
     
-    public PersistentStoreImpl(String solrUrl) {
+    public PersistentStoreImpl() {
         LOGGER.trace("INSIDE: PersistentStoreImpl constructor with solrUrl = {}", solrUrl);
         coreSolrServers = new ConcurrentHashMap<String, SolrServer>();
         setSolrUrl(solrUrl);
