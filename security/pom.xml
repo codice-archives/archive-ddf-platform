@@ -17,12 +17,12 @@
 	<parent>
 		<groupId>ddf.platform</groupId>
         <artifactId>platform</artifactId>
-        <version>2.6.1-SNAPSHOT</version>
+        <version>2.6.1</version>
 	</parent>
 
 	<groupId>ddf.platform.security</groupId>
 	<artifactId>security</artifactId>
-  <version>2.6.1-SNAPSHOT</version>
+  <version>2.6.1</version>
 	<name>DDF Platform Security</name>
 	<packaging>pom</packaging>
 
