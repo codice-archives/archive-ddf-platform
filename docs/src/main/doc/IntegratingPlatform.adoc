@@ -530,7 +530,11 @@ _This parameter is only applicable for the metric's graph display format._
 
 The metric's historical data can be displayed in several formats, including the PNG format previously mentioned, a CSV file, an Excel .xls file, a PowerPoint .ppt file, an XML file, and a JSON file. The PNG, CSV, and XLS formats are accessed via hyperlinks provided in the Metrics tab web page. The PPT, XML, and JSON formats are accessed by specifying the format in the custom URL, e.g., `http://<DDF_HOST>:<DDF_PORT>/services/internal/metrics/catalogQueries.json?dateOffset=1800`.
 
-The table below describes each of the supported formats, how to access them, and an example where applicable. (NOTE: all example URLs begin with `http://<DDF_HOST>:<DDF_PORT>` which is omitted in the table for brevity.)
+The table below describes each of the supported formats, how to access them, and an example where applicable. (NOTE: all example URLs begin with 
+----
+http://<DDF_HOST>:<DDF_PORT>
+----
+which is omitted in the table for brevity.)
 
 [cols="1,2,1,5a" options="header"]
 |===
@@ -691,9 +695,17 @@ An aggregate report in PPT format would consist of a single slideshow with a sep
 * the PNG graph for the metric's collected data during the time range, and
 * a total count (if applicable) at the bottom of the slide.
 
-Hyperlinks are provided for each aggregate report's time range in the supported display formats, which include Excel (XLS) and PowerPoint (PPT). Aggregate reports for custom time ranges can also be accessed directly via the URL `http://<DDF_HOST>:<DDF_PORT>/services/internal/metrics/report.<format>?startDate=<start_date_value>&endDate=<end_date_value>` where <format> is either `xls` or `ppt` and the `<start_date_value>` and `<end_date_value>` specify the custom time range for the report.
+Hyperlinks are provided for each aggregate report's time range in the supported display formats, which include Excel (XLS) and PowerPoint (PPT). Aggregate reports for custom time ranges can also be accessed directly via the URL: 
+----
+http://<DDF_HOST>:<DDF_PORT>/services/internal/metrics/report.<format>?startDate=<start_date_value>&endDate=<end_date_value>
+----
+where `<format>` is either `xls` or `ppt` and the `<start_date_value>` and `<end_date_value>` specify the custom time range for the report.
 
-The table below list several examples for custom aggregate reports. (NOTE: all example URLs begin with `http://<DDF_HOST>:<DDF_PORT>` which is omitted in the table for brevity.)
+The table below list several examples for custom aggregate reports. (NOTE: all example URLs begin with:
+----
+http://<DDF_HOST>:<DDF_PORT>
+----
+which is omitted in the table for brevity.)
 
 [cols="2" options="header"]
 |===
