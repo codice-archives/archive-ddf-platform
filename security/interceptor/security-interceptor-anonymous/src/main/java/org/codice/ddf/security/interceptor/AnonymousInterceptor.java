@@ -94,6 +94,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Interceptor for anonymous access to SOAP endpoints.
@@ -117,6 +118,22 @@ public class AnonymousInterceptor extends AbstractWSS4JInterceptor {
     private boolean overrideEndpointPolicies = false;
 
     private final Object lock = new Object();
+
+    private static final ThreadLocal<DocumentBuilder> BUILDER =
+            new ThreadLocal<DocumentBuilder>() {
+                @Override
+                protected DocumentBuilder initialValue() {
+                    try {
+                        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                        factory.setNamespaceAware(false);
+                        return factory.newDocumentBuilder();
+                    } catch (ParserConfigurationException ex) {
+                        throw new IllegalArgumentException("Unable to create new DocumentBuilder", ex);
+                    }
+                }
+            };
+
+    private Subject anonymousSubject;
 
     public AnonymousInterceptor(SecurityManager securityManager, ContextPolicyManager contextPolicyManager) {
         super();
@@ -274,7 +291,7 @@ public class AnonymousInterceptor extends AbstractWSS4JInterceptor {
                                         }
                                     }
                                 }
-                                LOGGER.debug("Assertion XML: {}", out.toString());
+                                LOGGER.trace("Assertion XML: {}", out.toString());
                                 String xml = out.toString();
 
                                 if (qName.equals(SP12Constants.TRANSPORT_BINDING)) {
@@ -286,15 +303,10 @@ public class AnonymousInterceptor extends AbstractWSS4JInterceptor {
                                     String xpathStrict = "/Layout/Policy/Strict";
                                     String xpathLaxTimestampFirst = "/Layout/Policy/LaxTimestampFirst";
                                     String xpathLaxTimestampLast = "/Layout/Policy/LaxTimestampLast";
-                                    layoutLax = evaluateExpression(xml, xpathLax);
-                                    layoutStrict = evaluateExpression(xml, xpathStrict);
-                                    layoutLaxTimestampFirst = evaluateExpression(xml, xpathLaxTimestampFirst);
-                                    layoutLaxTimestampLast = evaluateExpression(xml, xpathLaxTimestampLast);
 
                                 } else if (qName.equals(SP12Constants.TRANSPORT_TOKEN)) {
                                 } else if (qName.equals(SP12Constants.HTTPS_TOKEN)) {
                                     String xpath = "/HttpsToken/Policy/RequireClientCertificate";
-                                    requireClientCert = evaluateExpression(xml, xpath);
 
                                 } else if (qName.equals(SP12Constants.SIGNED_SUPPORTING_TOKENS)) {
                                     String xpath = "/SignedSupportingTokens/Policy//IssuedToken/RequestSecurityTokenTemplate/TokenType";
@@ -376,18 +388,23 @@ public class AnonymousInterceptor extends AbstractWSS4JInterceptor {
     }
 
     private void createSecurityToken(SoapVersion version, SOAPFactory soapFactory, SOAPElement securityHeader) {
-        AnonymousAuthenticationToken token = new AnonymousAuthenticationToken(BaseAuthenticationToken.DEFAULT_REALM);
-
-        //synchronize the step of requesting the assertion, it is not thread safe
-        Subject subject = null;
-        synchronized (lock) {
-            try {
-                subject = securityManager.getSubject(token);
-            } catch (SecurityServiceException sse) {
-                LOGGER.warn("Unable to request subject for anonymous user.", sse);
+        Subject subject = anonymousSubject;
+        if (tokenAboutToExpire()) {
+            AnonymousAuthenticationToken token = new AnonymousAuthenticationToken(BaseAuthenticationToken.DEFAULT_REALM);
+            LOGGER.debug("Getting new Anonymous user token");
+            //synchronize the step of requesting the assertion, it is not thread safe
+            synchronized (lock) {
+                try {
+                    subject = securityManager.getSubject(token);
+                    anonymousSubject = subject;
+                } catch (SecurityServiceException sse) {
+                    LOGGER.warn("Unable to request subject for anonymous user.", sse);
+                }
             }
-
+        } else {
+            LOGGER.debug("Using cached Anonymous user token");
         }
+
         if (subject != null) {
             PrincipalCollection principals = subject.getPrincipals();
             if (principals != null) {
@@ -411,6 +428,13 @@ public class AnonymousInterceptor extends AbstractWSS4JInterceptor {
                 LOGGER.warn("Subject did not contain any principals, could not create element.");
             }
         }
+    }
+
+    private boolean tokenAboutToExpire() {
+        return anonymousSubject == null || anonymousSubject.getPrincipals() == null
+                || anonymousSubject.getPrincipals().oneByType(SecurityAssertion.class) == null
+                || anonymousSubject.getPrincipals().oneByType(SecurityAssertion.class)
+                .getSecurityToken().isAboutToExpire(TimeUnit.MINUTES.toSeconds(1));
     }
 
     private void createIncludeTimestamp(SOAPFactory soapFactory, SOAPElement securityHeader) {
@@ -525,7 +549,6 @@ public class AnonymousInterceptor extends AbstractWSS4JInterceptor {
         XPath xpath = xFactory.newXPath();
 
         try {
-
             XPathExpression expr = xpath.compile(xpathStmt);
             result = (String) expr.evaluate(document, XPathConstants.STRING);
         } catch (XPathExpressionException e) {
@@ -542,7 +565,6 @@ public class AnonymousInterceptor extends AbstractWSS4JInterceptor {
         XPath xpath = xFactory.newXPath();
 
         try {
-
             XPathExpression expr = xpath.compile("boolean(" + xpathStmt + ")");
             result = (Boolean) expr.evaluate(document, XPathConstants.BOOLEAN);
         } catch (XPathExpressionException e) {
@@ -553,15 +575,10 @@ public class AnonymousInterceptor extends AbstractWSS4JInterceptor {
 
     private Document createDocument(String xml) {
         InputSource source = new InputSource(new StringReader(xml));
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(false);
-        DocumentBuilder db = null;
         Document document = null;
+        BUILDER.get().reset();
         try {
-            db = dbf.newDocumentBuilder();
-            document = db.parse(source);
-        } catch (ParserConfigurationException e1) {
-            LOGGER.warn("Error creating new document builder.", e1);
+            document = BUILDER.get().parse(source);
         } catch (SAXException e1) {
             LOGGER.warn("Error parsing policy XML.", e1);
         } catch (IOException e1) {
