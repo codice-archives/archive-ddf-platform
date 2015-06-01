@@ -14,23 +14,22 @@
  **/
 package ddf.security.service.impl;
 
-import ddf.security.assertion.SecurityAssertion;
-import ddf.security.assertion.impl.SecurityAssertionImpl;
-import org.apache.cxf.endpoint.Endpoint;
+import java.security.Principal;
+import java.util.List;
+
 import org.apache.cxf.message.Message;
-import org.apache.cxf.service.model.EndpointInfo;
-import org.apache.cxf.ws.security.SecurityConstants;
 import org.apache.cxf.ws.security.tokenstore.SecurityToken;
 import org.apache.cxf.ws.security.tokenstore.TokenStore;
-import org.apache.cxf.ws.security.tokenstore.TokenStoreFactory;
 import org.apache.cxf.ws.security.wss4j.WSS4JInInterceptor;
+import org.apache.cxf.ws.security.wss4j.WSS4JUtils;
 import org.apache.wss4j.common.principal.SAMLTokenPrincipal;
+import org.apache.wss4j.common.saml.SamlAssertionWrapper;
 import org.apache.wss4j.dom.WSSecurityEngineResult;
 import org.apache.wss4j.dom.handler.WSHandlerConstants;
 import org.apache.wss4j.dom.handler.WSHandlerResult;
 
-import java.security.Principal;
-import java.util.List;
+import ddf.security.assertion.SecurityAssertion;
+import ddf.security.assertion.impl.SecurityAssertionImpl;
 
 /**
  * Creates a SecurityAssertion object by extracting the token id from the message and using that id
@@ -76,10 +75,11 @@ public final class SecurityAssertionStore {
             }
             if (tokenStore != null && principal != null && principal instanceof SAMLTokenPrincipal) {
                 String id = ((SAMLTokenPrincipal) principal).getId();
+                SamlAssertionWrapper samlAssertionWrapper = ((SAMLTokenPrincipal) principal).getToken();
                 SecurityToken token = tokenStore.getToken(id);
                 if (token == null) {
-                    token = new SecurityToken(id);
-                    token.setToken(((SAMLTokenPrincipal) principal).getToken().getElement());
+                    token = new SecurityToken(id, samlAssertionWrapper.getElement(), samlAssertionWrapper.getSaml2().getIssueInstant().toDate(), samlAssertionWrapper.getSaml2().getConditions().getNotOnOrAfter().toDate());
+                    tokenStore.add(token);
                 }
 
                 return new SecurityAssertionImpl(token);
@@ -94,22 +94,7 @@ public final class SecurityAssertionStore {
      * @param message
      * @return TokenStore
      */
-    private static TokenStore getTokenStore(Message message) {
-        EndpointInfo info = message.getExchange().get(Endpoint.class).getEndpointInfo();
-        synchronized (info) {
-            TokenStore tokenStore = (TokenStore) message
-                    .getContextualProperty(SecurityConstants.TOKEN_STORE_CACHE_INSTANCE);
-            if (tokenStore == null) {
-                tokenStore = (TokenStore) info
-                        .getProperty(SecurityConstants.TOKEN_STORE_CACHE_INSTANCE);
-            }
-            if (tokenStore == null) {
-                TokenStoreFactory tokenStoreFactory = TokenStoreFactory.newInstance();
-                tokenStore = tokenStoreFactory.newTokenStore(
-                        SecurityConstants.TOKEN_STORE_CACHE_INSTANCE, message);
-                info.setProperty(SecurityConstants.TOKEN_STORE_CACHE_INSTANCE, tokenStore);
-            }
-            return tokenStore;
-        }
+    public static TokenStore getTokenStore(Message message) {
+        return WSS4JUtils.getTokenStore(message);
     }
 }
