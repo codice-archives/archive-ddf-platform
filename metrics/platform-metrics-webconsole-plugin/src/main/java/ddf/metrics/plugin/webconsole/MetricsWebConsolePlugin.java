@@ -14,39 +14,6 @@
  **/
 package ddf.metrics.plugin.webconsole;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.CharEncoding;
-import org.apache.commons.lang.StringUtils;
-import org.apache.cxf.configuration.jsse.TLSClientParameters;
-import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.cxf.transport.http.HTTPConduit;
-import org.apache.felix.webconsole.AbstractWebConsolePlugin;
-import org.codice.ddf.configuration.ConfigurationManager;
-import org.codice.ddf.configuration.ConfigurationWatcher;
-import org.joda.time.DateMidnight;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeConstants;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ContainerFactory;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.FrameworkUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -67,6 +34,41 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.CharEncoding;
+import org.apache.commons.lang.StringUtils;
+import org.apache.cxf.configuration.jsse.TLSClientParameters;
+import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.transport.http.HTTPConduit;
+import org.apache.felix.webconsole.AbstractWebConsolePlugin;
+import org.codice.ddf.configuration.ConfigurationManager;
+import org.codice.ddf.configuration.ConfigurationWatcher;
+import org.joda.time.DateMidnight;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeConstants;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+import org.json.simple.JSONValue;
+import org.json.simple.parser.ContainerFactory;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Felix Web Console plugin to create a Metrics tab for interacting with the {@link MetricsEndpoint}
@@ -391,7 +393,7 @@ public class MetricsWebConsolePlugin extends AbstractWebConsolePlugin implements
     }
 
     void addWeeklyReportUrls(PrintWriter pw, int numWeeklyReports, String metricsServiceUrl) {
-        DateTime input = new DateTime();
+        DateTime input = newDateTime();
         LOGGER.debug("NOW:  {}", input);
 
         for (int i = 1; i <= numWeeklyReports; i++) {
@@ -417,8 +419,12 @@ public class MetricsWebConsolePlugin extends AbstractWebConsolePlugin implements
         }
     }
 
+    private DateTime newDateTime() {
+        return new DateTime(DateTimeZone.UTC);
+    }
+
     void addMonthlyReportUrls(PrintWriter pw, int numMonthlyReports, String metricsServiceUrl) {
-        DateTime input = new DateTime();
+        DateTime input = newDateTime();
         LOGGER.debug("NOW:  {}", input);
 
         for (int i = 1; i <= numMonthlyReports; i++) {
@@ -444,7 +450,7 @@ public class MetricsWebConsolePlugin extends AbstractWebConsolePlugin implements
     }
 
     void addYearlyReportUrls(PrintWriter pw, int numYearlyReports, String metricsServiceUrl) {
-        DateTime input = new DateTime();
+        DateTime input = newDateTime();
         LOGGER.debug("NOW:  {}", input);
 
         for (int i = 1; i <= numYearlyReports; i++) {

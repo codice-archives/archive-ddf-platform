@@ -1,27 +1,27 @@
 /**
  * Copyright (c) Codice Foundation
- * 
+ *
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details. A copy of the GNU Lesser General Public License
  * is distributed along with this program and can be found at
  * <http://www.gnu.org/licenses/lgpl.html>.
- * 
+ *
  **/
 package ddf.metrics.reporting.internal.rrd4j;
 
-import java.awt.Color;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -50,6 +50,9 @@ import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.MutableDateTime;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.rrd4j.ConsolFun;
@@ -71,7 +74,7 @@ import ddf.metrics.reporting.internal.MetricsRetriever;
 /**
  * Retrieves metrics historical data from an RRD file and formats that data in a variety of formats
  * over a specified time range.
- * 
+ *
  * The supported formats include:
  * <ul>
  * <li>a PNG graph of the data (returned to the client as a byte array)</li>
@@ -81,25 +84,28 @@ import ddf.metrics.reporting.internal.MetricsRetriever;
  * <li>as XML (no schema provided)</li>
  * <li>a JSON-formatted string</li>
  * </ul>
- * 
+ *
  * Aggregate reports, which include the data for all metrics, over a specified time range are also
  * supported in XLS (Excel) and PPT (PowerPoint) format. For example, if there are 10 metrics that
  * are having data collected, then an aggregate report in XLS would be a spreadsheet with a separate
  * worksheet for each of the 10 metrics. Similarly, this aggregate report in PPT format would
  * consist of a slide per metric, where each slide contains the metric's graph and total count (if
  * applicable).
- * 
+ *
  * @author rodgersh
  * @author ddf.isgs@lmco.com
- * 
+ *
  */
 public class RrdMetricsRetriever implements MetricsRetriever {
+
     private static final transient Logger LOGGER = LoggerFactory
             .getLogger(RrdMetricsRetriever.class);
 
     private static final double DEFAULT_METRICS_MAX_THRESHOLD = 4000000000.0;
 
     private static final int RRD_STEP = 60;
+
+    public static final String SUMMARY_TIMESTAMP = "dd-MM-yy HHmm";
 
     /**
      * Max threshold for a metric's sample value. Used to filter out spike data that typically has a
@@ -112,6 +118,10 @@ public class RrdMetricsRetriever implements MetricsRetriever {
      */
     private static final String months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
         "Sep", "Oct", "Nov", "Dec"};
+
+    public enum SUMMARY_INTERVALS {
+        minute, hour, day, week, month;
+    }
 
     public RrdMetricsRetriever() {
         this(DEFAULT_METRICS_MAX_THRESHOLD);
@@ -393,7 +403,7 @@ public class RrdMetricsRetriever implements MetricsRetriever {
         Collections.sort(metricNames);
 
         for (String metricName : metricNames) {
-            String rrdFilename = metricsDir + metricName + ".rrd";
+            String rrdFilename = getRrdFilename(metricsDir, metricName);
 
             byte[] graph = createGraph(metricName, rrdFilename, startTime, endTime);
             MetricData metricData = getMetricData(rrdFilename, startTime, endTime);
@@ -453,20 +463,24 @@ public class RrdMetricsRetriever implements MetricsRetriever {
     }
 
     @Override
-    public OutputStream createXlsReport(List<String> metricNames, String metricsDir,
-            long startTime, long endTime) throws IOException, MetricsGraphException {
+    public OutputStream createXlsReport(List<String> metricNames, String metricsDir, long startTime,
+            long endTime, String summaryInterval) throws IOException, MetricsGraphException {
         LOGGER.trace("ENTERING: createXlsReport");
 
         Workbook wb = new HSSFWorkbook();
-
         Collections.sort(metricNames);
 
-        for (int i = 0; i < metricNames.size(); i++) {
-            String metricName = metricNames.get(i);
-            String rrdFilename = metricsDir + metricName + ".rrd";
-            String displayName = i + metricName;
+        if (StringUtils.isNotEmpty(summaryInterval)) {
+            createSummary(wb, metricNames, metricsDir, startTime, endTime,
+                    SUMMARY_INTERVALS.valueOf(summaryInterval));
+        } else {
+            for (int i = 0; i < metricNames.size(); i++) {
+                String metricName = metricNames.get(i);
+                String rrdFilename = getRrdFilename(metricsDir, metricName);
+                String displayName = i + metricName;
 
-            createSheet(wb, displayName, rrdFilename, startTime, endTime);
+                createSheet(wb, displayName, rrdFilename, startTime, endTime);
+            }
         }
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -478,11 +492,128 @@ public class RrdMetricsRetriever implements MetricsRetriever {
         return bos;
     }
 
+    private void createSummary(Workbook wb, List<String> metricNames, String metricsDir,
+            long startTime, long endTime, SUMMARY_INTERVALS summaryInterval)
+            throws IOException, MetricsGraphException {
+        // convert seconds to milliseconds
+        startTime *= 1000;
+        endTime *= 1000;
+        DateTime reportStart = new DateTime(startTime, DateTimeZone.UTC);
+        DateTime reportEnd = new DateTime(endTime, DateTimeZone.UTC);
+
+        Sheet sheet = wb.createSheet();
+        wb.setSheetName(0, reportStart.toString(SUMMARY_TIMESTAMP) + " to " + reportEnd
+                .toString(SUMMARY_TIMESTAMP));
+        Row headingRow = sheet.createRow(0);
+
+        for (String metricName : metricNames) {
+            MutableDateTime chunkStart = new MutableDateTime(reportStart);
+            MutableDateTime chunkEnd = new MutableDateTime(chunkStart);
+            Row row = sheet.createRow(metricNames.indexOf(metricName) + 1);
+            int columnCounter = 1;
+            Boolean isSum = null;
+
+            while (reportEnd.compareTo(chunkEnd) > 0 && columnCounter < 256) {
+                increment(chunkEnd, summaryInterval);
+                if (chunkEnd.isAfter(reportEnd)) {
+                    chunkEnd.setMillis(reportEnd);
+                }
+
+                // offset range by one millisecond so rrd will calculate granularity correctly
+                chunkEnd.addMillis(-1);
+                MetricData metricData = getMetricData(getRrdFilename(metricsDir, metricName),
+                        chunkStart.getMillis() / 1000, chunkEnd.getMillis() / 1000);
+                isSum = metricData.hasTotalCount();
+                chunkEnd.addMillis(1);
+
+                if (headingRow.getCell(columnCounter) == null) {
+                    Cell headingRowCell = headingRow.createCell(columnCounter);
+                    headingRowCell.getCellStyle().setWrapText(true);
+                    headingRowCell
+                            .setCellValue(getTimestamp(chunkStart, columnCounter, summaryInterval));
+                }
+
+                Cell sumOrAvg = row.createCell(columnCounter);
+                if (isSum) {
+                    sumOrAvg.setCellValue((double) metricData.getTotalCount());
+                } else {
+                    sumOrAvg.setCellValue(doubleAverage(metricData.getValues()));
+                }
+
+                chunkStart.setMillis(chunkEnd);
+                columnCounter++;
+            }
+
+            if (isSum != null) {
+                row.createCell(0).setCellValue(
+                        convertCamelCase(metricName) + " (" + (isSum ? "sum" : "avg") + ")");
+            }
+        }
+        for (int i = 0; i < 256; i++) {
+            sheet.autoSizeColumn(i);
+        }
+    }
+
+    private Double doubleAverage(Collection<Double> values) {
+        Double average = 0.0;
+        int count = 0;
+        for (Double value : values) {
+            average = (value + count * average) / (count + 1);
+        }
+        return average;
+    }
+
+    private String getTimestamp(MutableDateTime chunkStart, int columnCounter,
+            SUMMARY_INTERVALS summaryInterval) {
+        StringBuilder title = new StringBuilder();
+        title.append(StringUtils.capitalize(summaryInterval.toString())).append(" ")
+                .append(columnCounter).append("\n");
+        String timestamp = SUMMARY_TIMESTAMP;
+        switch (summaryInterval) {
+        case minute:
+        case hour:
+            break;
+        case day:
+        case week:
+            timestamp = "dd-MM-y";
+            break;
+        case month:
+            timestamp = "MM-y";
+            break;
+        }
+        title.append(chunkStart.toDateTime(DateTimeZone.getDefault()).toString(timestamp));
+        return title.toString();
+    }
+
+    private String getRrdFilename(String metricsDir, String metricName) {
+        return metricsDir + metricName + ".rrd";
+    }
+
+    private void increment(MutableDateTime chunkStart, SUMMARY_INTERVALS summaryInterval) {
+        switch (summaryInterval) {
+        case minute:
+            chunkStart.addMinutes(1);
+            break;
+        case hour:
+            chunkStart.addHours(1);
+            break;
+        case day:
+            chunkStart.addDays(1);
+            break;
+        case week:
+            chunkStart.addWeeks(1);
+            break;
+        case month:
+            chunkStart.addMonths(1);
+            break;
+        }
+    }
+
     /**
      * Creates an Excel worksheet containing the metric's data (timestamps and values) for the
      * specified time range. This worksheet is titled with the trhe metric's name and added to the
      * specified Workbook.
-     * 
+     *
      * @param wb
      *            the workbook to add this worksheet to
      * @param metricName
@@ -493,7 +624,7 @@ public class RrdMetricsRetriever implements MetricsRetriever {
      *            start time, in seconds since Unix epoch, to fetch metric's data
      * @param endTime
      *            end time, in seconds since Unix epoch, to fetch metric's data
-     * 
+     *
      * @throws IOException
      * @throws MetricsGraphException
      */
@@ -509,8 +640,6 @@ public class RrdMetricsRetriever implements MetricsRetriever {
                 + getCalendarTime(endTime);
 
         Sheet sheet = wb.createSheet(displayableMetricName);
-        sheet.autoSizeColumn(0);
-        sheet.autoSizeColumn(1);
 
         Font headerFont = wb.createFont();
         headerFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
@@ -570,22 +699,25 @@ public class RrdMetricsRetriever implements MetricsRetriever {
             row.createCell(1).setCellValue(metricData.getTotalCount());
         }
 
+        sheet.autoSizeColumn(0);
+        sheet.autoSizeColumn(1);
+
         LOGGER.trace("EXITING: createSheet");
     }
 
     /**
      * Retrieves the RRD stored data for the specified metric over the specified time range.
-     * 
+     *
      * @param rrdFilename
      *            the name of the RRD file containing the metric's data
      * @param startTime
      *            start time, in seconds since Unix epoch, to fetch metric's data
      * @param endTime
      *            end time, in seconds since Unix epoch, to fetch metric's data
-     * 
+     *
      * @return domain object containing the metric's sampled data, which consists of the timestamps
      *         and their associated values, and the total count of the sampled data
-     * 
+     *
      * @throws IOException
      * @throws MetricsGraphException
      */
@@ -674,7 +806,7 @@ public class RrdMetricsRetriever implements MetricsRetriever {
      * capitalized words to the slide's title. The metric's data is used to determine the total
      * count across all of the metric's data, which is displayed at the bottom of the slide, under
      * the graph.
-     * 
+     *
      * @param ppt
      *            the PowerPoint slide deck to add this slide to
      * @param title
@@ -683,7 +815,7 @@ public class RrdMetricsRetriever implements MetricsRetriever {
      *            the metric's graph to be added to this slide
      * @param metricData
      *            the metric's data
-     * 
+     *
      * @throws IOException
      * @throws MetricsGraphException
      */
@@ -742,12 +874,12 @@ public class RrdMetricsRetriever implements MetricsRetriever {
     /**
      * Formats timestamp (in seconds since Unix epoch) into human-readable format of MMM DD YYYY
      * hh:mm:ss.
-     * 
+     *
      * Example: Apr 10 2013 09:14:43
-     * 
+     *
      * @param timestamp
      *            time in seconds since Unix epoch of Jan 1, 1970 12:00:00
-     * 
+     *
      * @return formatted date/time string of the form MMM DD YYYY hh:mm:ss
      */
     static String getCalendarTime(long timestamp) {
