@@ -14,9 +14,37 @@
  **/
 package ddf.metrics.reporting.internal.rest;
 
-import ddf.metrics.reporting.internal.MetricsEndpointException;
-import ddf.metrics.reporting.internal.MetricsGraphException;
-import ddf.metrics.reporting.internal.rrd4j.RrdMetricsRetriever;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Calendar;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+
 import org.apache.poi.hslf.model.Slide;
 import org.apache.poi.hslf.usermodel.SlideShow;
 import org.apache.poi.hssf.usermodel.HSSFRow;
@@ -39,35 +67,9 @@ import org.rrd4j.core.Sample;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Calendar;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.endsWith;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.startsWith;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import ddf.metrics.reporting.internal.MetricsEndpointException;
+import ddf.metrics.reporting.internal.MetricsGraphException;
+import ddf.metrics.reporting.internal.rrd4j.RrdMetricsRetriever;
 
 public class MetricsEndpointTest extends XMLTestCase {
     private static final Logger LOGGER = LoggerFactory.getLogger(MetricsEndpointTest.class);
@@ -492,7 +494,7 @@ public class MetricsEndpointTest extends XMLTestCase {
         endpoint.setMetricsDir(TEST_DIR);
 
         Response response = endpoint.getMetricsReport("xls", null, null,
-                Integer.toString(dateOffset), uriInfo);
+                Integer.toString(dateOffset), "minute", uriInfo);
 
         cleanupRrd();
 
@@ -504,7 +506,7 @@ public class MetricsEndpointTest extends XMLTestCase {
 
         HSSFWorkbook wb = new HSSFWorkbook(is);
         assertThat(wb.getNumberOfSheets(), equalTo(1));
-        HSSFSheet sheet = wb.getSheet("0 Uptime");
+        HSSFSheet sheet = wb.getSheetAt(0);
         assertThat(sheet, not(nullValue()));
     }
 
@@ -521,7 +523,7 @@ public class MetricsEndpointTest extends XMLTestCase {
         endpoint.setMetricsDir(TEST_DIR);
 
         Response response = endpoint.getMetricsReport("ppt", null, null,
-                Integer.toString(dateOffset), uriInfo);
+                Integer.toString(dateOffset), null, uriInfo);
 
         cleanupRrd();
 
@@ -534,6 +536,21 @@ public class MetricsEndpointTest extends XMLTestCase {
         SlideShow ppt = new SlideShow(is);
         Slide[] slides = ppt.getSlides();
         assertThat(slides.length, equalTo(1));
+    }
+
+    @Test
+    public void testSummaryFormat() throws URISyntaxException {
+        boolean pass = false;
+        try {
+            MetricsEndpoint endpoint = new MetricsEndpoint();
+            endpoint.setMetricsDir(TEST_DIR);
+
+            Response response = endpoint
+                    .getMetricsReport("ppt", null, null, "3600", "minute‰", createUriInfo());
+        } catch (MetricsEndpointException e) {
+            pass = true;
+        }
+        assertThat("Format not rejected", pass, is(true));
     }
 
     // NOTE: "expected" annotation does not work when test case extends XMLTestCase,
