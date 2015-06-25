@@ -50,7 +50,7 @@ public final class RestSecurity {
      * @throws NullPointerException if client is null
      */
     public static void setSubjectOnClient(Subject subject, Client client) {
-        if (subject != null) {
+        if (subject != null && "https".equalsIgnoreCase(client.getCurrentURI().getScheme())) {
             javax.ws.rs.core.Cookie cookie = createSamlCookie(subject, true);
             if (cookie == null) {
                 LOGGER.debug("SAML Cookie was null. Unable to set the cookie for the client.");
