@@ -10,4 +10,47 @@
         <sha1>8821DF6D1BC22FBA8F608021F4F27698CF3FD91F</sha1>
         <cve>CVE-2014-9389</cve>
     </suppress>
+
+    <suppress>
+        <notes><![CDATA[
+   file name: nagasena-rta-0000.0002.0049.0.jar
+   ]]></notes>
+        <sha1>1E12775BCBF7AF8B8B0CDC8A2B53D9E1955DE160</sha1>
+        <cve>CVE-2014-9389</cve>
+    </suppress>
+
+    <!--
+        CVE-2011-2730 only applies when using JSP Expression Language (EL) which is not used in DDF.
+     -->
+    <suppress>
+        <notes><![CDATA[
+   file name: javax.annotation-api-1.2.jar
+   ]]></notes>
+        <sha1>479C1E06DB31C432330183F5CAE684163F186146</sha1>
+        <cve>CVE-2011-2730</cve>
+    </suppress>
+
+    <suppress>
+        <notes><![CDATA[
+   file name: javax.ws.rs-api-2.0.1.jar
+   ]]></notes>
+        <sha1>104E9C2B5583CFCFEAC0402316221648D6D8EA6B</sha1>
+        <cve>CVE-2011-2730</cve>
+    </suppress>
+
+    <suppress>
+        <notes><![CDATA[
+   file name: xmlschema-core-2.2.1.jar
+   ]]></notes>
+        <sha1>02EFF1F3776590D4C51CC735EAB2143C497329F2</sha1>
+        <cve>CVE-2011-2730</cve>
+    </suppress>
+
+    <suppress>
+        <notes><![CDATA[
+   file name: slf4j-api-1.7.1.jar
+   ]]></notes>
+        <sha1>1A508B0ECD360507A39A4DBAEDD1AA4750741F6D</sha1>
+        <cve>CVE-2011-2730</cve>
+    </suppress>
 </suppressions>
