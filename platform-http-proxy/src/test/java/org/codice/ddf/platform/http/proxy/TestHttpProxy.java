@@ -178,4 +178,26 @@ public class TestHttpProxy {
 
         assertFalse(httpMessage.getBody().toString().contains("Policy"));
     }
+
+    @Test
+    public void testPolicyRemoveBeanSecurityRemoval() throws IOException {
+        InputStream inpuStream = TestHttpProxy.class.getResourceAsStream("/test_soap_response.xml");
+        String soapResponse = IOUtils.toString(inpuStream);
+        HttpProxy.PolicyRemoveBean policyRemoveBean = new HttpProxy.PolicyRemoveBean("8181", "8993",
+                "localhost", "/services");
+        Exchange exchange = mock(Exchange.class);
+        HttpMessage httpMessage = mock(HttpMessage.class);
+        when(exchange.getIn()).thenReturn(httpMessage);
+        when(exchange.getOut()).thenReturn(httpMessage);
+        when(httpMessage.getBody()).thenReturn(inpuStream);
+        when(httpMessage.getHeader(Exchange.HTTP_URI))
+                .thenReturn("/services/ws/QueryService");
+        doCallRealMethod().when(httpMessage).setBody(any());
+        doCallRealMethod().when(httpMessage).getBody();
+        httpMessage.setBody(soapResponse);
+
+        policyRemoveBean.rewrite(exchange);
+
+        assertFalse(httpMessage.getBody().toString().contains("Security"));
+    }
 }

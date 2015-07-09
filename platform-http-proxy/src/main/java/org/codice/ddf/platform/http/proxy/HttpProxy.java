@@ -20,6 +20,8 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
@@ -51,6 +53,9 @@ public class HttpProxy {
     public static final String HTTP_ENABLED_PROPERTY = "org.osgi.service.http.enabled";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpProxy.class);
+
+    private static final Pattern WSS_NAME_SPACE_PATTERN = Pattern.compile(
+            "xmlns:([^\\s]*?)=(\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\")");
 
     private final HttpProxyService httpProxyService;
 
@@ -176,6 +181,15 @@ public class HttpProxy {
                         if (isWsdlOrWadl || (queryString != null && queryString.endsWith(".xsd"))) {
                             bodyStr = bodyStr.replaceAll("https://" + host + ":" + httpsPort,
                                     "http://" + host + ":" + httpPort);
+                        }
+
+                        if (!isWsdlOrWadl) {
+                            Matcher matcher = WSS_NAME_SPACE_PATTERN.matcher(bodyStr);
+                            if (matcher.find()) {
+                                String ns = matcher.group(1);
+                                bodyStr = bodyStr.replaceFirst(
+                                        "<" + ns + ":Security(?s).*" + ns + ":Security>", "");
+                            }
                         }
                         exchange.getIn().setBody(bodyStr);
                     }
