@@ -15,6 +15,7 @@ package org.codice.ddf.ui.admin.api;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -57,7 +58,8 @@ public class ConfigurationAdmin implements ConfigurationAdminMBean {
 
     private static final String SERVICE_FACTORYPID = "service.factoryPid";
 
-    private final XLogger logger = new XLogger(LoggerFactory.getLogger(ConfigurationAdmin.class));
+    private static final XLogger LOGGER = new XLogger(
+            LoggerFactory.getLogger(ConfigurationAdmin.class));
 
     private final org.osgi.service.cm.ConfigurationAdmin configurationAdmin;
 
@@ -99,12 +101,12 @@ public class ConfigurationAdmin implements ConfigurationAdminMBean {
                 mBeanServer.registerMBean(this, objectName);
             } catch (InstanceAlreadyExistsException iaee) {
                 // Try to remove and re-register
-                logger.info("Re-registering SchemaLookup MBean");
+                LOGGER.info("Re-registering SchemaLookup MBean");
                 mBeanServer.unregisterMBean(objectName);
                 mBeanServer.registerMBean(this, objectName);
             }
         } catch (Exception e) {
-            logger.warn("Exception during initialization: ", e);
+            LOGGER.warn("Exception during initialization: ", e);
             throw new RuntimeException(e);
         }
     }
@@ -118,7 +120,7 @@ public class ConfigurationAdmin implements ConfigurationAdminMBean {
                 mBeanServer.unregisterMBean(objectName);
             }
         } catch (Exception e) {
-            logger.warn("Exception unregistering mbean: ", e);
+            LOGGER.warn("Exception unregistering mbean: ", e);
             throw new RuntimeException(e);
         }
     }
@@ -160,9 +162,22 @@ public class ConfigurationAdmin implements ConfigurationAdminMBean {
         return service;
     }
 
+    private String checkURI(URI uri) {
+        if (uri != null) {
+            if (!uri.isAbsolute()) {
+                return uri.toString();
+            } else {
+                LOGGER.warn("The uri {} is invalid, cannot be absolute.", uri);
+            }
+        }
+        return "";
+    }
+
     public List<Map<String, Object>> listModules() {
+
         List<AdminModule> adminModuleList = new ArrayList<AdminModule>();
         adminModuleList.addAll(this.moduleList);
+
         //just sort alphabetically and then make the first module the active one
         Collections.sort(adminModuleList, new Comparator<AdminModule>() {
             @Override
@@ -170,32 +185,37 @@ public class ConfigurationAdmin implements ConfigurationAdminMBean {
                 return adminModule.getName().compareTo(adminModule2.getName());
             }
         });
+
         List<Map<String, Object>> modules = new ArrayList<Map<String, Object>>();
         HashMap<String, Object> module;
+
         for (AdminModule adminModule : adminModuleList) {
             module = new HashMap<String, Object>();
             module.put("name", adminModule.getName());
             module.put("id", adminModule.getId());
-            if (adminModule.getJSLocation() != null) {
-                module.put("jsLocation", adminModule.getJSLocation().toString());
+
+            String jsLocation = checkURI(adminModule.getJSLocation());
+            String cssLocation = checkURI(adminModule.getCSSLocation());
+            String iframeLocation = checkURI(adminModule.getIframeLocation());
+
+            module.put("jsLocation", jsLocation);
+            module.put("cssLocation", cssLocation);
+            module.put("iframeLocation", iframeLocation);
+
+            if (StringUtils.isEmpty(jsLocation) &&
+                    StringUtils.isEmpty(cssLocation) &&
+                    StringUtils.isEmpty(iframeLocation)) {
+                LOGGER.warn("Module {} not added, it does not contain any valid locations.",
+                        adminModule.getName());
             } else {
-                module.put("jsLocation", "");
+                modules.add(module);
             }
-            if (adminModule.getCSSLocation() != null) {
-                module.put("cssLocation", adminModule.getCSSLocation().toString());
-            } else {
-                module.put("cssLocation", "");
-            }
-            if (adminModule.getIframeLocation() != null) {
-                module.put("iframeLocation", adminModule.getIframeLocation().toString());
-            } else {
-                module.put("iframeLocation", "");
-            }
-            modules.add(module);
         }
+
         if (modules.size() > 0) {
             modules.get(0).put("active", true);
         }
+
         return modules;
     }
 
