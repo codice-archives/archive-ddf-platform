@@ -43,8 +43,6 @@ public class ApplicationUploadEndpointTest {
 
     /**
      * Tests the {@link ApplicationUploadEndpoint#update(MultipartBody, UriInfo)} method
-     *
-     * TODO: This is creating junk in the file system, shouldn't be
      */
     @Test
     public void testApplicationUploadEndpointUpdate() {
@@ -69,6 +67,8 @@ public class ApplicationUploadEndpointTest {
             ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
                     testAppService);
 
+            applicationUploadEndpoint
+                    .setDefaultFileLocation("target/ApplicationUploadEndpointTest");
             assertNotNull(applicationUploadEndpoint.update(testMultipartBody, testUriInfo));
         } catch (Exception e) {
             logger.info("Exception: ", e);
@@ -102,6 +102,8 @@ public class ApplicationUploadEndpointTest {
             ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
                     testAppService);
 
+            applicationUploadEndpoint
+                    .setDefaultFileLocation("target/ApplicationUploadEndpointTest");
             assertNotNull(applicationUploadEndpoint.create(testMultipartBody, testUriInfo));
             verify(testAppService).addApplication(any(URI.class));
         } catch (Exception e) {
