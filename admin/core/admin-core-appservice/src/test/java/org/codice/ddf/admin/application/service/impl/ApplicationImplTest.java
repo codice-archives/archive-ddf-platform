@@ -13,23 +13,19 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-import java.util.Set;
-
 import org.apache.karaf.features.Feature;
 import org.apache.karaf.features.Repository;
 import org.apache.karaf.features.internal.RepositoryImpl;
 import org.codice.ddf.admin.application.service.Application;
 import org.junit.Test;
+
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Set;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests out the ApplicationImpl code to make sure it is following the interface
@@ -160,6 +156,36 @@ public class ApplicationImplTest {
         assertFalse(testApp2.equals(testApp1));
         assertFalse(testApp1.equals(testAppNull));
 
+    }
+
+    /**
+     * Tests the {@link ApplicationImpl#getURI()} method
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGetURI() throws Exception {
+        URI testURI = getClass().getClassLoader().getResource("test-features-with-main-feature.xml").toURI();
+        RepositoryImpl repo1 = new RepositoryImpl(testURI);
+        repo1.load();
+        Application testApp1 = new ApplicationImpl(repo1);
+        assertEquals(testURI, testApp1.getURI());
+    }
+
+    /**
+     * Tests the {@link ApplicationImpl#getDescription()} method
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGetDescription() throws Exception {
+        RepositoryImpl repo = new RepositoryImpl(
+                getClass().getClassLoader().getResource("test-features-with-main-feature.xml")
+                        .toURI());
+        repo.load();
+
+        Application testApp = new ApplicationImpl(repo);
+        assertEquals(testApp.getDescription(), "Main Feature Test");
     }
 
 }

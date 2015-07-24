@@ -13,21 +13,6 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.apache.karaf.bundle.core.BundleState;
 import org.apache.karaf.bundle.core.BundleStateService;
 import org.apache.karaf.features.BundleInfo;
@@ -46,8 +31,16 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.wiring.BundleRevision;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.URI;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class ApplicationServiceImplTest {
 
@@ -109,7 +102,7 @@ public class ApplicationServiceImplTest {
      * tests as part of the setup for individual test conditions. @see
      * {@link #createMockFeaturesService(Set, Set, Set)}
      *
-     * @throws java.lang.Exception
+     * @throws Exception
      */
     @SuppressWarnings("unchecked")
     @Before
@@ -188,12 +181,12 @@ public class ApplicationServiceImplTest {
         };
 
         assertEquals(ApplicationService.class.getName()
-                + " does not contain the expected number of Applications", 1,
+                        + " does not contain the expected number of Applications", 1,
                 appService.getApplications().size());
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
                 ApplicationState.ACTIVE, appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[] {})[0]).getState());
+                        appService.getApplications().toArray(new Application[]{})[0]).getState());
     }
 
     /**
@@ -256,7 +249,7 @@ public class ApplicationServiceImplTest {
 
         assertEquals("mainFeatureRepo returned unexpected state", ApplicationState.INACTIVE,
                 appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[] {})[0]).getState());
+                        appService.getApplications().toArray(new Application[]{})[0]).getState());
 
     }
 
@@ -305,12 +298,12 @@ public class ApplicationServiceImplTest {
         };
 
         assertEquals(ApplicationService.class.getName()
-                + " does not contain the expected number of Applications", 1,
+                        + " does not contain the expected number of Applications", 1,
                 appService.getApplications().size());
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
                 ApplicationState.ACTIVE, appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[] {})[0]).getState());
+                        appService.getApplications().toArray(new Application[]{})[0]).getState());
     }
 
     /**
@@ -523,7 +516,7 @@ public class ApplicationServiceImplTest {
         };
 
         assertEquals(ApplicationService.class.getName()
-                + " does not contain the expected number of Applications", 1,
+                        + " does not contain the expected number of Applications", 1,
                 appService.getApplications().size());
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
@@ -581,7 +574,7 @@ public class ApplicationServiceImplTest {
         };
 
         assertEquals(ApplicationService.class.getName()
-                + " does not contain the expected number of Applications", 1,
+                        + " does not contain the expected number of Applications", 1,
                 appService.getApplications().size());
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
@@ -651,7 +644,7 @@ public class ApplicationServiceImplTest {
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
                 ApplicationState.FAILED, appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[] {})[0]).getState());
+                        appService.getApplications().toArray(new Application[]{})[0]).getState());
     }
 
     /**
@@ -676,7 +669,7 @@ public class ApplicationServiceImplTest {
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
                 ApplicationState.FAILED, appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[] {})[0]).getState());
+                        appService.getApplications().toArray(new Application[]{})[0]).getState());
     }
 
     /**
@@ -701,7 +694,7 @@ public class ApplicationServiceImplTest {
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
                 ApplicationState.FAILED, appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[] {})[0]).getState());
+                        appService.getApplications().toArray(new Application[]{})[0]).getState());
     }
 
     /**
@@ -727,7 +720,7 @@ public class ApplicationServiceImplTest {
         FeaturesService featuresService = createMockFeaturesService(mainFeatureRepo, null, null);
         Set<Bundle> bundleSet = getXBundlesFromFeaturesService(featuresService, 2);
         assertNotNull(mainFeatureRepo.getName() + " does not contain 2 bundles", bundleSet);
-        Bundle[] bundles = bundleSet.toArray(new Bundle[] {});
+        Bundle[] bundles = bundleSet.toArray(new Bundle[]{});
 
         when(bundleStateServices.get(0).getState(bundles[0])).thenReturn(BundleState.Resolved);
         when(bundleStateServices.get(0).getState(bundles[1])).thenReturn(BundleState.Failure);
@@ -740,7 +733,7 @@ public class ApplicationServiceImplTest {
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
                 ApplicationState.FAILED, appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[] {})[0]).getState());
+                        appService.getApplications().toArray(new Application[]{})[0]).getState());
     }
 
     /**
@@ -1014,6 +1007,470 @@ public class ApplicationServiceImplTest {
                         .getName());
             }
         }
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#startApplication(Application)} method
+     * for the case where there a main feature exists
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testStartApplicationMainFeature() throws Exception {
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo1, noMainFeatureRepo2));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        Application testApp = mock(ApplicationImpl.class);
+        Feature testFeature = mock(Feature.class);
+        when(testFeature.getName()).thenReturn("TestFeature");
+        when(testApp.getMainFeature()).thenReturn(testFeature);
+
+        appService.startApplication(testApp);
+
+        verify(featuresService, atLeastOnce()).installFeature("TestFeature");
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#startApplication(Application)} method
+     * for the case where there is no main feature, but other features exist
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testStartApplicationNoMainFeature() throws Exception {
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo1, noMainFeatureRepo2));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        Application testApp = mock(ApplicationImpl.class);
+        Feature testFeature1 = mock(Feature.class);
+        Feature testFeature2 = mock(Feature.class);
+        Set<Feature> featureSet = new HashSet<Feature>();
+        featureSet.add(testFeature1);
+        featureSet.add(testFeature2);
+
+        when(testApp.getName()).thenReturn("TestApp");
+        when(testApp.getMainFeature()).thenReturn(null);
+        when(testApp.getFeatures()).thenReturn(featureSet);
+        when(testFeature1.getName()).thenReturn("TestFeature1");
+        when(testFeature2.getName()).thenReturn("TestFeature2");
+        when(testFeature1.getInstall()).thenReturn(Feature.DEFAULT_INSTALL_MODE);
+        when(testFeature2.getInstall()).thenReturn(Feature.DEFAULT_INSTALL_MODE);
+
+        appService.startApplication(testApp);
+
+        verify(featuresService).installFeature("TestFeature1");
+        verify(featuresService).installFeature("TestFeature2");
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#startApplication(String)} method
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testStartApplicationStringParam() throws Exception {
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo1, noMainFeatureRepo2));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        appService.startApplication(mainFeatureRepo.getName());
+
+        verify(featuresService).installFeature(mainFeatureRepo.getFeatures()[0].getName());
+        verify(featuresService).installFeature(mainFeatureRepo.getFeatures()[1].getName());
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#stopApplication(Application)} method
+     * for the case where a main feature exists
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testStopApplicationMainFeature() throws Exception {
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo1, noMainFeatureRepo2));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        Application testApp1 = mock(ApplicationImpl.class);
+        Feature testFeature1 = mock(Feature.class);
+        List<Feature> featureList = new ArrayList<Feature>();
+        Set<Feature> featureSet1 = new HashSet<Feature>();
+        featureSet1.add(testFeature1);
+        featureList.add(testFeature1);
+
+        when(testFeature1.getName()).thenReturn("TestFeature1");
+        when(testApp1.getMainFeature()).thenReturn(testFeature1);
+        when(testApp1.getFeatures()).thenReturn(featureSet1);
+        when(featuresService.isInstalled(testFeature1)).thenReturn(true);
+        when(testFeature1.getDependencies()).thenReturn(featureList);
+        when(testFeature1.getVersion()).thenReturn("0.0.0");
+
+        appService.stopApplication(testApp1);
+
+        verify(featuresService, atLeastOnce()).uninstallFeature("TestFeature1", "0.0.0");
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#stopApplication(String)} method
+     * for the case where a main feature exists
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testStopApplicationMainFeatureStringParam() throws Exception {
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo1, noMainFeatureRepo2));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        String testAppName = mainFeatureRepo.getName();
+        Feature[] featureList = mainFeatureRepo.getFeatures();
+
+        appService.stopApplication(testAppName);
+
+        verify(featuresService).uninstallFeature(featureList[0].getName());
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#stopApplication(Application)} method
+     * for the case where there is no main feature, but other features exist
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testStopApplicationNoMainFeature() throws Exception {
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo1, noMainFeatureRepo2));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        Application testApp = mock(ApplicationImpl.class);
+        Feature testFeature1 = mock(Feature.class);
+        Feature testFeature2 = mock(Feature.class);
+        Set<Feature> featureSet = new HashSet<Feature>();
+        featureSet.add(testFeature1);
+        featureSet.add(testFeature2);
+
+        when(testApp.getName()).thenReturn("TestApp");
+        when(testApp.getMainFeature()).thenReturn(null);
+        when(testApp.getFeatures()).thenReturn(featureSet);
+        when(testFeature1.getName()).thenReturn("TestFeature1");
+        when(testFeature2.getName()).thenReturn("TestFeature2");
+        when(testFeature1.getInstall()).thenReturn(Feature.DEFAULT_INSTALL_MODE);
+        when(testFeature2.getInstall()).thenReturn(Feature.DEFAULT_INSTALL_MODE);
+        when(featuresService.isInstalled(testFeature1)).thenReturn(true);
+        when(featuresService.isInstalled(testFeature2)).thenReturn(true);
+
+        appService.stopApplication(testApp);
+
+        verify(featuresService, atLeastOnce()).uninstallFeature("TestFeature1");
+        verify(featuresService, atLeastOnce()).uninstallFeature("TestFeature2");
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#stopApplication(String)} method
+     * for the case where there is no main feature, but other features exist
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testStopApplicationNoMainFeatureStringParam() throws Exception {
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo1, noMainFeatureRepo2));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        String testAppName = noMainFeatureRepo1.getName();
+        Feature[] featureList = noMainFeatureRepo1.getFeatures();
+
+        appService.stopApplication(testAppName);
+
+        verify(featuresService).uninstallFeature(featureList[0].getName());
+        verify(featuresService).uninstallFeature(featureList[1].getName());
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#removeApplication(Application)} method
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testRemoveApplicationApplicationParam() throws Exception {
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo1, noMainFeatureRepo2));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        Application testApp = mock(ApplicationImpl.class);
+        Feature testFeature1 = mock(Feature.class);
+        Feature testFeature2 = mock(Feature.class);
+        Set<Feature> featureSet = new HashSet<>();
+        featureSet.add(testFeature1);
+        featureSet.add(testFeature2);
+        featuresService.installFeature(testFeature1, EnumSet.noneOf(FeaturesService.Option.class));
+        featuresService.installFeature(testFeature2, EnumSet.noneOf(FeaturesService.Option.class));
+
+        when(testApp.getFeatures()).thenReturn(featureSet);
+        when(featuresService.isInstalled(testFeature1)).thenReturn(true);
+        when(featuresService.isInstalled(testFeature2)).thenReturn(true);
+        when(testFeature1.getName()).thenReturn("TestFeature1");
+        when(testFeature1.getVersion()).thenReturn("0.0.0");
+        when(testFeature2.getName()).thenReturn("TestFeature2");
+        when(testFeature2.getVersion()).thenReturn("0.0.0");
+        when(testApp.getURI()).thenReturn(null);
+
+        appService.removeApplication(testApp);
+
+        verify(testApp).getURI();
+        verify(featuresService).uninstallFeature("TestFeature1", "0.0.0");
+        verify(featuresService).uninstallFeature("TestFeature2", "0.0.0");
+        verify(featuresService).removeRepository(null, false);
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#getAllFeatures()} method
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGetAllFeatures() throws Exception {
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo1, noMainFeatureRepo2));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        assertNotNull(appService.getAllFeatures());
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#findApplicationFeatures(String)} method
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testFindApplicationFeatures() throws Exception {
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo1, noMainFeatureRepo2));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        Feature testFeature1 = mock(Feature.class);
+        Feature[] featureList = {testFeature1};
+        Repository testRepo = mock(Repository.class);
+        when(testRepo.getName()).thenReturn("TestApp");
+        when(testRepo.getFeatures()).thenReturn(featureList);
+        Repository[] repositoryList = {testRepo};
+        when(featuresService.listRepositories()).thenReturn(repositoryList);
+        when(featuresService.isInstalled(testFeature1)).thenReturn(true);
+
+        assertNotNull(appService.findApplicationFeatures("TestApp"));
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#addApplication(URI)} method
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testAddApplicationURIParam() throws Exception {
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(noMainFeatureRepo1, noMainFeatureRepo2));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        try {
+            URI testURI = ApplicationServiceImplTest.class.getClassLoader().getResource("test-kar.zip").toURI();
+
+            appService.addApplication(testURI);
+            verify(featuresService).addRepository(any(URI.class), eq(false));
+        }catch(Exception e){
+            logger.info("Exception: ", e);
+            fail();
+        }
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#removeApplication(URI)} method
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testRemoveApplicationURIParam() throws Exception {
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo2));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        Repository[] repoList = {mainFeatureRepo};
+        URI testURL = mainFeatureRepo.getURI();
+        Feature[] featureList = mainFeatureRepo.getFeatures();
+        when(featuresService.listRepositories()).thenReturn(repoList);
+
+        appService.removeApplication(testURL);
+
+        verify(featuresService).removeRepository(testURL, false);
+        verify(featuresService).uninstallFeature(featureList[0].getName(), featureList[0].getVersion());
+        verify(featuresService).uninstallFeature(featureList[1].getName(), featureList[1].getVersion());
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#removeApplication(String)} method
+     *
+     * @throws Exception
+      */
+    @Test
+    public void testRemoveApplicationStringParam() throws Exception {
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo1));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        String testAppName = mainFeatureRepo.getName();
+        Feature[] featureList = mainFeatureRepo.getFeatures();
+
+        appService.removeApplication(testAppName);
+
+        verify(featuresService).uninstallFeature(featureList[0].getName(), featureList[0].getVersion());
+        verify(featuresService).uninstallFeature(featureList[1].getName(), featureList[1].getVersion());
+    }
+
+    /**
+     * Tests the {@link ApplicationServiceImpl#findFeature(Feature)} method
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testFindFeature() throws Exception{
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo1));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationService appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+
+        Feature testFeature = mainFeatureRepo.getFeatures()[0];
+
+        assertNotNull(appService.findFeature(testFeature));
+    }
+
+    /**
+     * Tests  the {@link ApplicationServiceImpl#setConfigFileName(String)} method
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testSetConfigFileName() throws Exception{
+        Set<Repository> activeRepos = new HashSet<Repository>(
+                Arrays.asList(mainFeatureRepo, noMainFeatureRepo1));
+        FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(featuresService);
+        ApplicationServiceImpl appService = new ApplicationServiceImpl(bundleStateServices) {
+            @Override
+            protected BundleContext getContext() {
+                return bundleContext;
+            }
+        };
+        ServiceReference<ConfigurationAdmin> testConfigAdminRef = mock(ServiceReference.class);
+        ConfigurationAdmin testConfigAdmin = mock(ConfigurationAdmin.class);
+        Configuration testConfig = mock(Configuration.class);
+        when(bundleContext.getServiceReference(ConfigurationAdmin.class))
+                .thenReturn(testConfigAdminRef);
+        when(bundleContext.getService(testConfigAdminRef)).thenReturn(testConfigAdmin);
+        when(testConfigAdmin.getConfiguration(ApplicationServiceImpl.class.getName()))
+                .thenReturn(testConfig);
+        Dictionary<String, Object> testProperties = mock(Dictionary.class);
+        when(testProperties.get("first-run")).thenReturn(1);
+        when(testConfig.getProperties()).thenReturn(testProperties);
+
+        appService.setConfigFileName("TestFileName");
     }
 
     /**

@@ -13,15 +13,17 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.apache.karaf.features.Repository;
+import org.apache.karaf.features.internal.RepositoryImpl;
+import org.codice.ddf.admin.application.service.Application;
+import org.codice.ddf.admin.application.service.ApplicationNode;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import org.codice.ddf.admin.application.service.Application;
-import org.junit.Test;
 
 /**
  * Tests out the ApplicationNodeImpl code to make sure it is following the
@@ -42,6 +44,7 @@ public class ApplicationNodeImplTest {
 
     private static final String APP2_DESCRIPTION = "Test Description 2";
 
+    private Logger logger = LoggerFactory.getLogger(ApplicationServiceImplTest.class);
     /**
      * Tests the 'getters' to make sure that they return the correct values
      * after initialization and after setting the child and parent.
@@ -75,4 +78,99 @@ public class ApplicationNodeImplTest {
 
     }
 
+    /**
+     * Tests the getStatus() method to make sure it returns the correct
+     * value(s) after initialization, and after a new status has been
+     * set via setStatus()
+     */
+    @Test
+    public void testStatus() {
+        Application testApp = mock(Application.class);
+        when(testApp.getName()).thenReturn(APP_NAME);
+        when(testApp.getVersion()).thenReturn(APP_VERSION);
+        when(testApp.getDescription()).thenReturn(APP_DESCRIPTION);
+
+        ApplicationStatusImpl testStatus = mock(ApplicationStatusImpl.class);
+        ApplicationStatusImpl testStatus2 = mock(ApplicationStatusImpl.class);
+
+        ApplicationNodeImpl testNode = new ApplicationNodeImpl(testApp, testStatus);
+        assertEquals(testStatus, testNode.getStatus());
+
+        testNode.setStatus(testStatus2);
+        assertEquals(testStatus2, testNode.getStatus());
+
+    }
+
+    /**
+     * Tests the {@link ApplicationNodeImpl#ApplicationNodeImpl(Application)} constructor
+     * for the case where the application exists
+     */
+    @Test
+    public void testApplicationNodeImplConstructorAppParam() {
+        Application testApp = mock(Application.class);
+
+        ApplicationNode testNode = new ApplicationNodeImpl(testApp);
+
+        assertEquals(testApp, testNode.getApplication());
+    }
+
+    /**
+     * Tests the {@link ApplicationNodeImpl#ApplicationNodeImpl(Application)} constructor
+     * for the case where the application is null
+     */
+    @Test
+    public void testApplicationNodeImplConstructorAppParamNull() {
+        Application testApp = null;
+        try {
+            ApplicationNode testNode = new ApplicationNodeImpl(testApp);
+        }
+        catch(Exception e){
+            assertEquals(e.getMessage(), "Input application cannot be null.");
+        }
+
+    }
+
+    /**
+     * Tests the {@link ApplicationNodeImpl#hashCode()} method
+     */
+    @Test
+    public void testHashCode() {
+        try {
+            Repository testRepo = new RepositoryImpl(
+                    ApplicationNodeImpl.class.getClassLoader().getResource("test-features-with-main-feature.xml").toURI());
+            Application testApp = new ApplicationImpl(testRepo);
+
+            ApplicationNode testNode = new ApplicationNodeImpl(testApp);
+
+            assertEquals(testApp.hashCode(), testNode.hashCode());
+        }catch(Exception e){
+            logger.info("Exception: ", e);
+            fail();
+        }
+    }
+
+    /**
+     * Tests the {@link ApplicationNodeImpl#equals(Object)} method for the case where the
+     * parameter is null, the parameter is the same object, the parameter is not an
+     * ApplicationNodeImpl object, and where the parameter is a different ApplicationNodeImpl
+     * which has the same application
+     */
+    @Test
+    public void testEqualsObjParam() {
+        Application testApp = mock(Application.class);
+        ApplicationNode testNode = new ApplicationNodeImpl(testApp);
+        ApplicationNode testNode2 = new ApplicationNodeImpl(testApp);
+
+//        Case 1:
+        assertFalse(testNode.equals(null));
+
+//        Case 2:
+        assertTrue(testNode.equals(testNode));
+
+//        Case 3:
+        assertFalse(testNode.equals(testApp));
+
+//        Case 4:
+        assertTrue(testNode.equals(testNode2));
+    }
 }

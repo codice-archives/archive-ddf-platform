@@ -13,22 +13,18 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.apache.karaf.features.Feature;
 import org.codice.ddf.admin.application.service.Application;
 import org.codice.ddf.admin.application.service.ApplicationStatus;
 import org.codice.ddf.admin.application.service.ApplicationStatus.ApplicationState;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
+
+import java.util.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * Tests the ApplicationStatusImpl class which retuns the stats of an
