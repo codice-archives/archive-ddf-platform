@@ -1,10 +1,10 @@
 /**
  * Copyright (c) Codice Foundation
- * <p/>
+ * <p>
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
- * <p/>
+ * <p>
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details. A copy of the GNU Lesser General Public License
@@ -22,6 +22,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Set;
 
@@ -160,6 +161,37 @@ public class ApplicationImplTest {
         assertFalse(testApp2.equals(testApp1));
         assertFalse(testApp1.equals(testAppNull));
 
+    }
+
+    /**
+     * Tests the {@link ApplicationImpl#getURI()} method
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGetURI() throws Exception {
+        URI testURI = getClass().getClassLoader().getResource("test-features-with-main-feature.xml")
+                .toURI();
+        RepositoryImpl repo1 = new RepositoryImpl(testURI);
+        repo1.load();
+        Application testApp1 = new ApplicationImpl(repo1);
+        assertEquals(testURI, testApp1.getURI());
+    }
+
+    /**
+     * Tests the {@link ApplicationImpl#getDescription()} method
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGetDescription() throws Exception {
+        RepositoryImpl repo = new RepositoryImpl(
+                getClass().getClassLoader().getResource("test-features-with-main-feature.xml")
+                        .toURI());
+        repo.load();
+
+        Application testApp = new ApplicationImpl(repo);
+        assertEquals(testApp.getDescription(), "Main Feature Test");
     }
 
 }
