@@ -51,7 +51,7 @@ public class ApplicationUploadEndpoint {
 
     private static final String DEFAULT_FILE_NAME = "file.jar";
 
-    private static final String DEFAULT_FILE_LOCATION = "data/installer/uploads/";
+    private static String DEFAULT_FILE_LOCATION = "data/installer/uploads/";
 
     private static final String JAR_EXT = "jar";
 
@@ -230,6 +230,24 @@ public class ApplicationUploadEndpoint {
             IOUtils.closeQuietly(inputStream);
         }
         return newFile;
+    }
+
+    /**
+     * Getter method for DEFAULT_FILE_LOCATION for testing purposes
+     *
+     * @return The default file location.
+     */
+    String getDefaultFileLocation() {
+        return DEFAULT_FILE_LOCATION;
+    }
+    /**
+     * Setter method for DEFAULT_FILE_LOCATION for testing purposes
+     *
+     * @param fileLocation
+     *            the desired fileLocation
+     */
+    void setDefaultFileLocation(String fileLocation) {
+        DEFAULT_FILE_LOCATION = fileLocation;
     }
 
 }
