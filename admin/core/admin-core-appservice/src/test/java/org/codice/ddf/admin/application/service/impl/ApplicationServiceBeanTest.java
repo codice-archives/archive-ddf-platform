@@ -52,9 +52,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ApplicationServiceBeanTest {
-    public ApplicationService testAppService;
+    private ApplicationService testAppService;
 
-    public ConfigurationAdminExt testConfigAdminExt;
+    private ConfigurationAdminExt testConfigAdminExt;
 
     ApplicationNode testNode1;
 
