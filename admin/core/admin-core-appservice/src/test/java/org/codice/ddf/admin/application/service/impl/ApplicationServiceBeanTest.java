@@ -1,10 +1,10 @@
 /**
  * Copyright (c) Codice Foundation
- * <p/>
+ * <p>
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
- * <p/>
+ * <p>
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details. A copy of the GNU Lesser General Public License
@@ -13,12 +13,36 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.karaf.features.BundleInfo;
 import org.apache.karaf.features.Feature;
 import org.codice.ddf.admin.application.plugin.ApplicationPlugin;
 import org.codice.ddf.admin.application.rest.model.FeatureDetails;
-import org.codice.ddf.admin.application.service.*;
+import org.codice.ddf.admin.application.service.Application;
+import org.codice.ddf.admin.application.service.ApplicationNode;
+import org.codice.ddf.admin.application.service.ApplicationService;
+import org.codice.ddf.admin.application.service.ApplicationServiceException;
+import org.codice.ddf.admin.application.service.ApplicationStatus;
 import org.codice.ddf.ui.admin.api.ConfigurationAdminExt;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,28 +51,31 @@ import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-
-
 public class ApplicationServiceBeanTest {
     public ApplicationService testAppService;
+
     public ConfigurationAdminExt testConfigAdminExt;
+
     ApplicationNode testNode1;
+
     ApplicationNode testNode2;
+
     ApplicationNode testNode3;
+
     Application testApp;
+
     ApplicationStatus testStatus;
+
     Set<ApplicationNode> nodeSet;
+
     Set<ApplicationNode> childrenSet;
+
     BundleContext bundleContext;
 
     private Logger logger = LoggerFactory.getLogger(ApplicationServiceBeanMBean.class);
 
     @Before
-    public void setUp() throws Exception{
+    public void setUp() throws Exception {
         testAppService = mock(ApplicationServiceImpl.class);
         testConfigAdminExt = mock(ConfigurationAdminExt.class);
         testApp = mock(ApplicationImpl.class);
@@ -56,8 +83,9 @@ public class ApplicationServiceBeanTest {
         when(testApp.getName()).thenReturn("TestApp");
         when(testApp.getVersion()).thenReturn("0.0.0");
         when(testApp.getDescription()).thenReturn("Test app for testGetApplicationTree");
-        when(testApp.getURI()).thenReturn(getClass().getClassLoader()
-                .getResource("test-features-with-main-feature.xml").toURI());
+        when(testApp.getURI()).thenReturn(
+                getClass().getClassLoader().getResource("test-features-with-main-feature.xml")
+                        .toURI());
         bundleContext = mock(BundleContext.class);
     }
 
@@ -68,8 +96,9 @@ public class ApplicationServiceBeanTest {
     @Test
     public void testApplicationServiceBeanConstructor() {
         try {
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
-        }catch(Exception e){
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -81,19 +110,21 @@ public class ApplicationServiceBeanTest {
     @Test
     public void testInit() {
         try {
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
             serviceBean.init();
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
 
         //Do it twice, should remove and re-init
         try {
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
             serviceBean.init();
             serviceBean.init();
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -105,10 +136,11 @@ public class ApplicationServiceBeanTest {
     @Test
     public void testDestroy() {
         try {
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
             serviceBean.init();
             serviceBean.destroy();
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -128,8 +160,10 @@ public class ApplicationServiceBeanTest {
         when(testFeature2.getName()).thenReturn("TestFeature2");
         when(testFeature3.getName()).thenReturn("TestFeature3");
         when(testFeature4.getName()).thenReturn("TestFeature4");
-        when(testFeature1.getDescription()).thenReturn("Mock Feature for ApplicationServiceBean tests");
-        when(testFeature2.getDescription()).thenReturn("Mock Feature for ApplicationServiceBean tests");
+        when(testFeature1.getDescription())
+                .thenReturn("Mock Feature for ApplicationServiceBean tests");
+        when(testFeature2.getDescription())
+                .thenReturn("Mock Feature for ApplicationServiceBean tests");
 
         List<Feature> dependencies1 = new ArrayList<>();
         dependencies1.add(testFeature3);
@@ -145,10 +179,11 @@ public class ApplicationServiceBeanTest {
         when(testAppService.getInstallationProfiles()).thenReturn(featureList);
 
         try {
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
             serviceBean.init();
             assertNotNull(serviceBean.getInstallationProfiles());
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -159,7 +194,7 @@ public class ApplicationServiceBeanTest {
      *
      * @throws Exception
      */
-    public void setUpTree() throws Exception{
+    public void setUpTree() throws Exception {
         testNode1 = mock(ApplicationNodeImpl.class);
         testNode2 = mock(ApplicationNodeImpl.class);
         testNode3 = mock(ApplicationNodeImpl.class);
@@ -196,13 +231,14 @@ public class ApplicationServiceBeanTest {
     public void testGetApplicationTree() {
         try {
             setUpTree();
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
             serviceBean.init();
 
             assertNotNull(serviceBean.getApplicationTree());
             verify(testApp, atLeastOnce()).getName();
             verify(testNode1).getChildren();
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -215,14 +251,15 @@ public class ApplicationServiceBeanTest {
     public void testGetApplications() {
         try {
             setUpTree();
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
             serviceBean.init();
 
             assertNotNull(serviceBean.getApplications());
             verify(testApp, atLeastOnce()).getName();
             verify(testNode1).getChildren();
             verify(testNode1, atLeastOnce()).getApplication();
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -234,9 +271,10 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testGetApplicationsNoChildren() {
-        try{
+        try {
             setUpTree();
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
             serviceBean.init();
 
             when(testNode1.getChildren()).thenReturn((new TreeSet<ApplicationNode>()));
@@ -245,7 +283,7 @@ public class ApplicationServiceBeanTest {
 
             assertNotNull(serviceBean.getApplications());
 
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -257,9 +295,10 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testGetApplicationsChildDependencies() {
-        try{
+        try {
             setUpTree();
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
             serviceBean.init();
 
             ApplicationNode testNode4 = mock(ApplicationNodeImpl.class);
@@ -271,7 +310,7 @@ public class ApplicationServiceBeanTest {
 
             assertNotNull(serviceBean.getApplications());
 
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -283,9 +322,10 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testGetApplicationsMultiChildDependencies() {
-        try{
+        try {
             setUpTree();
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
             serviceBean.init();
 
             ApplicationNode testNode4 = mock(ApplicationNodeImpl.class);
@@ -299,7 +339,7 @@ public class ApplicationServiceBeanTest {
             when(testNode1.getChildren()).thenReturn(testNode1ChildrenSet);
 
             assertNotNull(serviceBean.getApplications());
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -310,13 +350,14 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testStartApplication() {
-        try{
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+        try {
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
 
             serviceBean.startApplication("TestApp");
 
             verify(testAppService).startApplication("TestApp");
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -328,14 +369,16 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testStartApplicationException() {
-        try{
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
-            doThrow(new ApplicationServiceException()).when(testAppService).startApplication("TestApp");
+        try {
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
+            doThrow(new ApplicationServiceException()).when(testAppService)
+                    .startApplication("TestApp");
 
             assertFalse(serviceBean.startApplication("TestApp"));
 
             verify(testAppService).startApplication("TestApp");
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -346,13 +389,14 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testStopApplication() {
-        try{
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+        try {
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
 
             serviceBean.stopApplication("TestApp");
 
             verify(testAppService).stopApplication("TestApp");
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -364,14 +408,16 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testStopApplicationException() {
-        try{
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
-            doThrow(new ApplicationServiceException()).when(testAppService).stopApplication("TestApp");
+        try {
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
+            doThrow(new ApplicationServiceException()).when(testAppService)
+                    .stopApplication("TestApp");
 
             assertFalse(serviceBean.stopApplication("TestApp"));
 
             verify(testAppService).stopApplication("TestApp");
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -382,8 +428,9 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testAddApplications() {
-        try{
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+        try {
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
             List<Map<String, Object>> testURLList = new ArrayList<>();
             Map<String, Object> testURLMap1 = mock(HashMap.class);
             when(testURLMap1.get("value")).thenReturn("TestMockURL1");
@@ -396,7 +443,7 @@ public class ApplicationServiceBeanTest {
 
             verify(testURLMap1).get("value");
             verify(testURLMap2).get("value");
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -408,13 +455,14 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testRemoveApplication() {
-        try{
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+        try {
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
 
             serviceBean.removeApplication("TestApp");
 
             verify(testAppService).removeApplication("TestApp");
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -426,13 +474,14 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testRemoveApplicationInvalidParam() {
-        try{
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+        try {
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
 
             serviceBean.removeApplication(StringUtils.EMPTY);
 
             verifyNoMoreInteractions(testAppService);
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -443,10 +492,11 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testGetServices() {
-        try{
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt){
+        try {
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt) {
                 @Override
-            protected BundleContext getContext(){
+                protected BundleContext getContext() {
                     return bundleContext;
                 }
             };
@@ -466,14 +516,14 @@ public class ApplicationServiceBeanTest {
             Set<BundleInfo> testBundles = new HashSet<>();
             testBundles.add(testBundle1);
 
-
             when(testApp.getBundles()).thenReturn(testBundles);
             when(testBundle1.getLocation()).thenReturn("TestLocation");
             when(testAppService.getApplication("TestApp")).thenReturn(testApp);
-            when(testConfigAdminExt.listServices(any(String.class), any(String.class))).thenReturn(services);
+            when(testConfigAdminExt.listServices(any(String.class), any(String.class)))
+                    .thenReturn(services);
 
             serviceBean.getServices("TestApp");
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -485,8 +535,9 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testGetSetApplicationPlugins() {
-        try{
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+        try {
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
             ApplicationPlugin testPlugin1 = mock(ApplicationPlugin.class);
             ApplicationPlugin testPlugin2 = mock(ApplicationPlugin.class);
             List<ApplicationPlugin> pluginList = new ArrayList<>();
@@ -497,7 +548,7 @@ public class ApplicationServiceBeanTest {
 
             assertEquals(pluginList, serviceBean.getApplicationPlugins());
 
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -508,8 +559,9 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testGetAllFeatures() {
-        try{
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+        try {
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
             List<FeatureDetails> testFeatureDetailsList = new ArrayList<>();
             FeatureDetails testFeatureDetails1 = mock(FeatureDetails.class);
             testFeatureDetailsList.add(testFeatureDetails1);
@@ -517,12 +569,12 @@ public class ApplicationServiceBeanTest {
             when(testFeatureDetails1.getVersion()).thenReturn("0.0.0");
             when(testFeatureDetails1.getStatus()).thenReturn("TestStatus");
             when(testFeatureDetails1.getRepository()).thenReturn("TestRepo");
-            
+
             when(testAppService.getAllFeatures()).thenReturn(testFeatureDetailsList);
 
             assertNotNull(serviceBean.getAllFeatures());
-            
-        }catch(Exception e) {
+
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -533,8 +585,9 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testFindApplicationFeatures() {
-        try{
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+        try {
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
 
             List<FeatureDetails> testFeatureDetailsList = new ArrayList<>();
             FeatureDetails testFeatureDetails1 = mock(FeatureDetails.class);
@@ -544,11 +597,12 @@ public class ApplicationServiceBeanTest {
             when(testFeatureDetails1.getStatus()).thenReturn("TestStatus");
             when(testFeatureDetails1.getRepository()).thenReturn("TestRepo");
 
-            when(testAppService.findApplicationFeatures("TestApp")).thenReturn(testFeatureDetailsList);
+            when(testAppService.findApplicationFeatures("TestApp"))
+                    .thenReturn(testFeatureDetailsList);
 
             assertNotNull(serviceBean.findApplicationFeatures("TestApp"));
 
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -559,8 +613,9 @@ public class ApplicationServiceBeanTest {
      */
     @Test
     public void testGetPluginsForApplication() {
-        try{
-            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService, testConfigAdminExt);
+        try {
+            ApplicationServiceBean serviceBean = new ApplicationServiceBean(testAppService,
+                    testConfigAdminExt);
             ApplicationPlugin testPlugin1 = mock(ApplicationPlugin.class);
             ApplicationPlugin testPlugin2 = mock(ApplicationPlugin.class);
             List<ApplicationPlugin> pluginList = new ArrayList<>();
@@ -579,7 +634,7 @@ public class ApplicationServiceBeanTest {
             serviceBean.setApplicationPlugins(pluginList);
 
             assertNotNull(serviceBean.getPluginsForApplication("TestApp"));
-        }catch(Exception e) {
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }

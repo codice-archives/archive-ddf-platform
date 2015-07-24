@@ -1,10 +1,10 @@
 /**
  * Copyright (c) Codice Foundation
- * <p/>
+ * <p>
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
- * <p/>
+ * <p>
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details. A copy of the GNU Lesser General Public License
@@ -12,6 +12,14 @@
  * <http://www.gnu.org/licenses/lgpl.html>.
  */
 package org.codice.ddf.admin.application.service.impl;
+
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.codice.ddf.admin.application.service.Application;
 import org.codice.ddf.admin.application.service.ApplicationNode;
@@ -21,12 +29,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Set;
-import java.util.TreeSet;
-
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.*;
 
 public class TreeApplicationCommandTest {
     private Logger logger = LoggerFactory.getLogger(TreeApplicationCommand.class);
@@ -58,13 +60,14 @@ public class TreeApplicationCommandTest {
         when(testNode2.getChildren()).thenReturn(new TreeSet<ApplicationNode>());
         when(testNode1.getChildren()).thenReturn(childSet);
         when(testAppService.getApplicationTree()).thenReturn(treeSet);
-        when(bundleContext.getServiceReference(ApplicationService.class)).thenReturn(mockFeatureRef);
+        when(bundleContext.getServiceReference(ApplicationService.class))
+                .thenReturn(mockFeatureRef);
         when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
 
-        try{
+        try {
             treeApplicationCommand.doExecute();
             verify(testAppService).getApplicationTree();
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }

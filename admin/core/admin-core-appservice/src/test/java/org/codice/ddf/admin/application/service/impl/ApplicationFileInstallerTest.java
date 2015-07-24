@@ -1,10 +1,10 @@
 /**
  * Copyright (c) Codice Foundation
- * <p/>
+ * <p>
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
- * <p/>
+ * <p>
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details. A copy of the GNU Lesser General Public License
@@ -13,14 +13,15 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 
-import static org.junit.Assert.*;
-
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ApplicationFileInstallerTest {
 
@@ -34,9 +35,9 @@ public class ApplicationFileInstallerTest {
         ApplicationFileInstaller testInstaller = new ApplicationFileInstaller();
         File testFile = new File(File.class.getResource("/test-kar.zip").getPath());
 
-        try{
+        try {
             assertNotNull(testInstaller.install(testFile));
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -50,13 +51,13 @@ public class ApplicationFileInstallerTest {
         ApplicationFileInstaller testInstaller = new ApplicationFileInstaller();
         File testFile = new File(File.class.getResource("/test-kar.zip").getPath());
         ZipFileApplicationDetails testFileDetails;
-        try{
+        try {
             testFileDetails = testInstaller.getAppDetails(testFile);
             assertNotNull(testFileDetails);
             //Verify other stuff
             assertEquals("main-feature", testFileDetails.getName());
             assertEquals("1.0.1", testFileDetails.getVersion());
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }

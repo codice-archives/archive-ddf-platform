@@ -1,10 +1,10 @@
 /**
  * Copyright (c) Codice Foundation
- * <p/>
+ * <p>
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
- * <p/>
+ * <p>
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details. A copy of the GNU Lesser General Public License
@@ -12,6 +12,11 @@
  * <http://www.gnu.org/licenses/lgpl.html>.
  */
 package org.codice.ddf.admin.application.service.impl;
+
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.codice.ddf.admin.application.service.Application;
 import org.codice.ddf.admin.application.service.ApplicationService;
@@ -23,11 +28,9 @@ import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.*;
-
 public class StopApplicationCommandTest {
     private Logger logger = LoggerFactory.getLogger(AddApplicationCommand.class);
+
     /**
      * Tests the {@link StopApplicationCommand} class and its associated methods
      */
@@ -48,13 +51,14 @@ public class StopApplicationCommandTest {
         when(testStatus.getState()).thenReturn(ApplicationState.ACTIVE);
         when(testAppService.getApplicationStatus(testApp)).thenReturn(testStatus);
         when(testAppService.getApplication("TestApp")).thenReturn(testApp);
-        when(bundleContext.getServiceReference(ApplicationService.class)).thenReturn(mockFeatureRef);
+        when(bundleContext.getServiceReference(ApplicationService.class))
+                .thenReturn(mockFeatureRef);
         when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
 
-        try{
+        try {
             stopApplicationCommand.doExecute();
             verify(testAppService).stopApplication("TestApp");
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception", e);
             fail();
         }

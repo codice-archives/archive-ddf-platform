@@ -1,10 +1,10 @@
 /**
  * Copyright (c) Codice Foundation
- * <p/>
+ * <p>
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
- * <p/>
+ * <p>
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details. A copy of the GNU Lesser General Public License
@@ -12,6 +12,14 @@
  * <http://www.gnu.org/licenses/lgpl.html>.
  */
 package org.codice.ddf.admin.application.service.impl;
+
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.karaf.features.Feature;
 import org.apache.karaf.features.internal.FeatureImpl;
@@ -24,13 +32,6 @@ import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.*;
-
-
 public class ListApplicationCommandTest {
     private Logger logger = LoggerFactory.getLogger(ListApplicationCommand.class);
 
@@ -39,7 +40,7 @@ public class ListApplicationCommandTest {
      */
     @Test
     public void testListApplicationCommandActiveApp() {
-        try{
+        try {
             ApplicationStatus testStatus;
             Application testApp;
             Set<Application> testAppSet = new HashSet<>();
@@ -62,18 +63,18 @@ public class ListApplicationCommandTest {
 
             when(testApp.getFeatures()).thenReturn(featureSet);
 
-            when(bundleContext.getServiceReference(ApplicationService.class)).thenReturn(mockFeatureRef);
+            when(bundleContext.getServiceReference(ApplicationService.class))
+                    .thenReturn(mockFeatureRef);
             when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
 
             ListApplicationCommand listApplicationCommand = new ListApplicationCommand();
             listApplicationCommand.setBundleContext(bundleContext);
 
-
             listApplicationCommand.doExecute();
 
             verify(testAppService).getApplications();
             verify(testAppService).getApplicationStatus(testApp);
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -84,7 +85,7 @@ public class ListApplicationCommandTest {
      */
     @Test
     public void testListApplicationCommandInactiveApp() {
-        try{
+        try {
             ApplicationStatus testStatus;
             Application testApp;
             Set<Application> testAppSet = new HashSet<>();
@@ -107,28 +108,29 @@ public class ListApplicationCommandTest {
 
             when(testApp.getFeatures()).thenReturn(featureSet);
 
-            when(bundleContext.getServiceReference(ApplicationService.class)).thenReturn(mockFeatureRef);
+            when(bundleContext.getServiceReference(ApplicationService.class))
+                    .thenReturn(mockFeatureRef);
             when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
 
             ListApplicationCommand listApplicationCommand = new ListApplicationCommand();
             listApplicationCommand.setBundleContext(bundleContext);
 
-
             listApplicationCommand.doExecute();
 
             verify(testAppService).getApplications();
             verify(testAppService).getApplicationStatus(testApp);
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
     }
+
     /**
      * Tests the {@link ListApplicationCommand} class for failed applications
      */
     @Test
     public void testListApplicationCommandFailedApp() {
-        try{
+        try {
             ApplicationStatus testStatus;
             Application testApp;
             Set<Application> testAppSet = new HashSet<>();
@@ -151,27 +153,29 @@ public class ListApplicationCommandTest {
 
             when(testApp.getFeatures()).thenReturn(featureSet);
 
-            when(bundleContext.getServiceReference(ApplicationService.class)).thenReturn(mockFeatureRef);
+            when(bundleContext.getServiceReference(ApplicationService.class))
+                    .thenReturn(mockFeatureRef);
             when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
 
             ListApplicationCommand listApplicationCommand = new ListApplicationCommand();
             listApplicationCommand.setBundleContext(bundleContext);
 
-
             listApplicationCommand.doExecute();
 
             verify(testAppService).getApplications();
             verify(testAppService).getApplicationStatus(testApp);
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
-    }/**
+    }
+
+    /**
      * Tests the {@link ListApplicationCommand} class for unknown status applications
      */
     @Test
     public void testListApplicationCommandUnknownApp() {
-        try{
+        try {
             ApplicationStatus testStatus;
             Application testApp;
             Set<Application> testAppSet = new HashSet<>();
@@ -194,18 +198,18 @@ public class ListApplicationCommandTest {
 
             when(testApp.getFeatures()).thenReturn(featureSet);
 
-            when(bundleContext.getServiceReference(ApplicationService.class)).thenReturn(mockFeatureRef);
+            when(bundleContext.getServiceReference(ApplicationService.class))
+                    .thenReturn(mockFeatureRef);
             when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
 
             ListApplicationCommand listApplicationCommand = new ListApplicationCommand();
             listApplicationCommand.setBundleContext(bundleContext);
 
-
             listApplicationCommand.doExecute();
 
             verify(testAppService).getApplications();
             verify(testAppService).getApplicationStatus(testApp);
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }

@@ -1,10 +1,10 @@
 /**
  * Copyright (c) Codice Foundation
- * <p/>
+ * <p>
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
- * <p/>
+ * <p>
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details. A copy of the GNU Lesser General Public License
@@ -13,19 +13,24 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
-import org.apache.karaf.features.Feature;
-import org.apache.karaf.features.Repository;
-import org.apache.karaf.features.internal.RepositoryImpl;
-import org.codice.ddf.admin.application.service.Application;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Set;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.karaf.features.Feature;
+import org.apache.karaf.features.Repository;
+import org.apache.karaf.features.internal.RepositoryImpl;
+import org.codice.ddf.admin.application.service.Application;
+import org.junit.Test;
 
 /**
  * Tests out the ApplicationImpl code to make sure it is following the interface
@@ -165,7 +170,8 @@ public class ApplicationImplTest {
      */
     @Test
     public void testGetURI() throws Exception {
-        URI testURI = getClass().getClassLoader().getResource("test-features-with-main-feature.xml").toURI();
+        URI testURI = getClass().getClassLoader().getResource("test-features-with-main-feature.xml")
+                .toURI();
         RepositoryImpl repo1 = new RepositoryImpl(testURI);
         repo1.load();
         Application testApp1 = new ApplicationImpl(repo1);

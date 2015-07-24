@@ -1,10 +1,10 @@
 /**
  * Copyright (c) Codice Foundation
- * <p/>
+ * <p>
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
- * <p/>
+ * <p>
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details. A copy of the GNU Lesser General Public License
@@ -13,16 +13,13 @@
  */
 package org.codice.ddf.admin.application.rest;
 
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
-import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
-import org.codice.ddf.admin.application.service.ApplicationService;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import javax.activation.DataHandler;
-import javax.ws.rs.core.UriInfo;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -30,9 +27,16 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.*;
+import javax.activation.DataHandler;
+import javax.ws.rs.core.UriInfo;
+
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
+import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
+import org.codice.ddf.admin.application.service.ApplicationService;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ApplicationUploadEndpointTest {
     private Logger logger = LoggerFactory.getLogger(ApplicationUploadEndpoint.class);
@@ -62,10 +66,11 @@ public class ApplicationUploadEndpointTest {
             InputStream testIS = new FileInputStream(testFile);
             when(testDataHandler.getInputStream()).thenReturn(testIS);
 
-            ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(testAppService);
+            ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
+                    testAppService);
 
             assertNotNull(applicationUploadEndpoint.update(testMultipartBody, testUriInfo));
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -89,16 +94,17 @@ public class ApplicationUploadEndpointTest {
         when(testAttach1.getContentDisposition()).thenReturn(testDisp);
         when(testMultipartBody.getAllAttachments()).thenReturn(attachmentList);
 
-        try{
+        try {
             File testFile = new File(File.class.getResource("/test-kar.zip").getPath());
             InputStream testIS = new FileInputStream(testFile);
             when(testDataHandler.getInputStream()).thenReturn(testIS);
 
-            ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(testAppService);
+            ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
+                    testAppService);
 
             assertNotNull(applicationUploadEndpoint.create(testMultipartBody, testUriInfo));
             verify(testAppService).addApplication(any(URI.class));
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }

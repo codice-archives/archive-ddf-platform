@@ -1,10 +1,10 @@
 /**
  * Copyright (c) Codice Foundation
- * <p/>
+ * <p>
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
- * <p/>
+ * <p>
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details. A copy of the GNU Lesser General Public License
@@ -13,6 +13,15 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.apache.karaf.features.Repository;
 import org.apache.karaf.features.internal.RepositoryImpl;
 import org.codice.ddf.admin.application.service.Application;
@@ -20,10 +29,6 @@ import org.codice.ddf.admin.application.service.ApplicationNode;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Tests out the ApplicationNodeImpl code to make sure it is following the
@@ -45,6 +50,7 @@ public class ApplicationNodeImplTest {
     private static final String APP2_DESCRIPTION = "Test Description 2";
 
     private Logger logger = LoggerFactory.getLogger(ApplicationServiceImplTest.class);
+
     /**
      * Tests the 'getters' to make sure that they return the correct values
      * after initialization and after setting the child and parent.
@@ -123,8 +129,7 @@ public class ApplicationNodeImplTest {
         Application testApp = null;
         try {
             ApplicationNode testNode = new ApplicationNodeImpl(testApp);
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             assertEquals(e.getMessage(), "Input application cannot be null.");
         }
 
@@ -136,14 +141,14 @@ public class ApplicationNodeImplTest {
     @Test
     public void testHashCode() {
         try {
-            Repository testRepo = new RepositoryImpl(
-                    ApplicationNodeImpl.class.getClassLoader().getResource("test-features-with-main-feature.xml").toURI());
+            Repository testRepo = new RepositoryImpl(ApplicationNodeImpl.class.getClassLoader()
+                    .getResource("test-features-with-main-feature.xml").toURI());
             Application testApp = new ApplicationImpl(testRepo);
 
             ApplicationNode testNode = new ApplicationNodeImpl(testApp);
 
             assertEquals(testApp.hashCode(), testNode.hashCode());
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -161,16 +166,16 @@ public class ApplicationNodeImplTest {
         ApplicationNode testNode = new ApplicationNodeImpl(testApp);
         ApplicationNode testNode2 = new ApplicationNodeImpl(testApp);
 
-//        Case 1:
+        //        Case 1:
         assertFalse(testNode.equals(null));
 
-//        Case 2:
+        //        Case 2:
         assertTrue(testNode.equals(testNode));
 
-//        Case 3:
+        //        Case 3:
         assertFalse(testNode.equals(testApp));
 
-//        Case 4:
+        //        Case 4:
         assertTrue(testNode.equals(testNode2));
     }
 }

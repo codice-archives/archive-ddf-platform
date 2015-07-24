@@ -1,10 +1,10 @@
 /**
  * Copyright (c) Codice Foundation
- * <p/>
+ * <p>
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
- * <p/>
+ * <p>
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details. A copy of the GNU Lesser General Public License
@@ -12,6 +12,28 @@
  * <http://www.gnu.org/licenses/lgpl.html>.
  */
 package org.codice.ddf.admin.application.service.impl;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Dictionary;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.karaf.bundle.core.BundleState;
 import org.apache.karaf.bundle.core.BundleStateService;
@@ -35,12 +57,6 @@ import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.URI;
-import java.util.*;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 public class ApplicationServiceImplTest {
 
@@ -186,7 +202,7 @@ public class ApplicationServiceImplTest {
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
                 ApplicationState.ACTIVE, appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[]{})[0]).getState());
+                        appService.getApplications().toArray(new Application[] {})[0]).getState());
     }
 
     /**
@@ -249,7 +265,7 @@ public class ApplicationServiceImplTest {
 
         assertEquals("mainFeatureRepo returned unexpected state", ApplicationState.INACTIVE,
                 appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[]{})[0]).getState());
+                        appService.getApplications().toArray(new Application[] {})[0]).getState());
 
     }
 
@@ -303,7 +319,7 @@ public class ApplicationServiceImplTest {
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
                 ApplicationState.ACTIVE, appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[]{})[0]).getState());
+                        appService.getApplications().toArray(new Application[] {})[0]).getState());
     }
 
     /**
@@ -644,7 +660,7 @@ public class ApplicationServiceImplTest {
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
                 ApplicationState.FAILED, appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[]{})[0]).getState());
+                        appService.getApplications().toArray(new Application[] {})[0]).getState());
     }
 
     /**
@@ -669,7 +685,7 @@ public class ApplicationServiceImplTest {
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
                 ApplicationState.FAILED, appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[]{})[0]).getState());
+                        appService.getApplications().toArray(new Application[] {})[0]).getState());
     }
 
     /**
@@ -694,7 +710,7 @@ public class ApplicationServiceImplTest {
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
                 ApplicationState.FAILED, appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[]{})[0]).getState());
+                        appService.getApplications().toArray(new Application[] {})[0]).getState());
     }
 
     /**
@@ -720,7 +736,7 @@ public class ApplicationServiceImplTest {
         FeaturesService featuresService = createMockFeaturesService(mainFeatureRepo, null, null);
         Set<Bundle> bundleSet = getXBundlesFromFeaturesService(featuresService, 2);
         assertNotNull(mainFeatureRepo.getName() + " does not contain 2 bundles", bundleSet);
-        Bundle[] bundles = bundleSet.toArray(new Bundle[]{});
+        Bundle[] bundles = bundleSet.toArray(new Bundle[] {});
 
         when(bundleStateServices.get(0).getState(bundles[0])).thenReturn(BundleState.Resolved);
         when(bundleStateServices.get(0).getState(bundles[1])).thenReturn(BundleState.Failure);
@@ -733,7 +749,7 @@ public class ApplicationServiceImplTest {
 
         assertEquals(mainFeatureRepo.getName() + " returned unexpected state",
                 ApplicationState.FAILED, appService.getApplicationStatus(
-                        appService.getApplications().toArray(new Application[]{})[0]).getState());
+                        appService.getApplications().toArray(new Application[] {})[0]).getState());
     }
 
     /**
@@ -1351,11 +1367,12 @@ public class ApplicationServiceImplTest {
         };
 
         try {
-            URI testURI = ApplicationServiceImplTest.class.getClassLoader().getResource("test-kar.zip").toURI();
+            URI testURI = ApplicationServiceImplTest.class.getClassLoader()
+                    .getResource("test-kar.zip").toURI();
 
             appService.addApplication(testURI);
             verify(featuresService).addRepository(any(URI.class), eq(false));
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.info("Exception: ", e);
             fail();
         }
@@ -1387,15 +1404,17 @@ public class ApplicationServiceImplTest {
         appService.removeApplication(testURL);
 
         verify(featuresService).removeRepository(testURL, false);
-        verify(featuresService).uninstallFeature(featureList[0].getName(), featureList[0].getVersion());
-        verify(featuresService).uninstallFeature(featureList[1].getName(), featureList[1].getVersion());
+        verify(featuresService)
+                .uninstallFeature(featureList[0].getName(), featureList[0].getVersion());
+        verify(featuresService)
+                .uninstallFeature(featureList[1].getName(), featureList[1].getVersion());
     }
 
     /**
      * Tests the {@link ApplicationServiceImpl#removeApplication(String)} method
      *
      * @throws Exception
-      */
+     */
     @Test
     public void testRemoveApplicationStringParam() throws Exception {
         Set<Repository> activeRepos = new HashSet<Repository>(
@@ -1414,8 +1433,10 @@ public class ApplicationServiceImplTest {
 
         appService.removeApplication(testAppName);
 
-        verify(featuresService).uninstallFeature(featureList[0].getName(), featureList[0].getVersion());
-        verify(featuresService).uninstallFeature(featureList[1].getName(), featureList[1].getVersion());
+        verify(featuresService)
+                .uninstallFeature(featureList[0].getName(), featureList[0].getVersion());
+        verify(featuresService)
+                .uninstallFeature(featureList[1].getName(), featureList[1].getVersion());
     }
 
     /**
@@ -1424,7 +1445,7 @@ public class ApplicationServiceImplTest {
      * @throws Exception
      */
     @Test
-    public void testFindFeature() throws Exception{
+    public void testFindFeature() throws Exception {
         Set<Repository> activeRepos = new HashSet<Repository>(
                 Arrays.asList(mainFeatureRepo, noMainFeatureRepo1));
         FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
@@ -1447,7 +1468,7 @@ public class ApplicationServiceImplTest {
      * @throws Exception
      */
     @Test
-    public void testSetConfigFileName() throws Exception{
+    public void testSetConfigFileName() throws Exception {
         Set<Repository> activeRepos = new HashSet<Repository>(
                 Arrays.asList(mainFeatureRepo, noMainFeatureRepo1));
         FeaturesService featuresService = createMockFeaturesService(activeRepos, null, null);
