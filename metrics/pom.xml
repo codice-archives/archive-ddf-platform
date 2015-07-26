@@ -27,7 +27,11 @@
   <artifactId>metrics</artifactId>
   <packaging>pom</packaging>
   <name>DDF Metrics</name>
-  
+
+  <properties>
+      <rrd4j.version>2.2</rrd4j.version>
+  </properties>
+
   <modules>
       <module>platform-metrics-collector</module>
       <module>platform-metrics-reporting</module>
