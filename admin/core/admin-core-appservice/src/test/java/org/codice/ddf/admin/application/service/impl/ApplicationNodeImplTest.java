@@ -49,7 +49,9 @@ public class ApplicationNodeImplTest {
 
     private static final String APP2_DESCRIPTION = "Test Description 2";
 
-    private Logger logger = LoggerFactory.getLogger(ApplicationServiceImplTest.class);
+    private static final String FEATURES_FILE_NAME = "test-features-with-main-feature.xml";
+
+    private Logger logger = LoggerFactory.getLogger(ApplicationNodeImplTest.class);
 
     /**
      * Tests the 'getters' to make sure that they return the correct values
@@ -82,6 +84,14 @@ public class ApplicationNodeImplTest {
         assertNotNull(testChildNode.getParent());
         assertEquals(testNode, testChildNode.getParent());
 
+    }
+
+    /**
+     * Tests the constructor to make sure it does not accept null parameters
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorNullParameters() {
+        ApplicationNodeImpl testNode = new ApplicationNodeImpl(null, null);
     }
 
     /**
@@ -142,7 +152,7 @@ public class ApplicationNodeImplTest {
     public void testHashCode() {
         try {
             Repository testRepo = new RepositoryImpl(ApplicationNodeImpl.class.getClassLoader()
-                    .getResource("test-features-with-main-feature.xml").toURI());
+                    .getResource(FEATURES_FILE_NAME).toURI());
             Application testApp = new ApplicationImpl(testRepo);
 
             ApplicationNode testNode = new ApplicationNodeImpl(testApp);
@@ -177,5 +187,34 @@ public class ApplicationNodeImplTest {
 
         //        Case 4:
         assertTrue(testNode.equals(testNode2));
+    }
+
+    /**
+     * Tests the {@link ApplicationNodeImpl#compareTo(ApplicationNode)} method for the case
+     * where the parameter node is null
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testCompareToIAE() {
+        Application testApp = mock(Application.class);
+        ApplicationNodeImpl testNode = new ApplicationNodeImpl(testApp);
+
+        testNode.compareTo(null);
+    }
+
+    /**
+     * Tests the {@link ApplicationNodeImpl#compareTo(ApplicationNode)} method for the case
+     * where the parameter node's application does not have the same name
+     */
+    @Test
+    public void testCompareTo() {
+        Application testApp = mock(Application.class);
+        when(testApp.getName()).thenReturn(APP_NAME);
+        Application testApp2 = mock(Application.class);
+        when(testApp2.getName()).thenReturn(APP2_NAME);
+
+        ApplicationNodeImpl testNode = new ApplicationNodeImpl(testApp);
+        ApplicationNodeImpl testNode2 = new ApplicationNodeImpl(testApp2);
+
+        assertEquals(-5, testNode.compareTo(testNode2));
     }
 }
