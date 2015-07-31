@@ -13,7 +13,6 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,30 +27,29 @@ import org.slf4j.LoggerFactory;
 public class StartApplicationCommandTest {
     private Logger logger = LoggerFactory.getLogger(AddApplicationCommand.class);
 
+    private static final String APP_NAME = "TestApp";
+
     /**
      * Tests the {@link StartApplicationCommand} class and its associated methods
+     *
+     * @throws Exception
      */
     @Test
-    public void testStartApplicationCommand() {
+    public void testStartApplicationCommand() throws Exception {
         ApplicationService testAppService = mock(ApplicationServiceImpl.class);
         BundleContext bundleContext = mock(BundleContext.class);
         ServiceReference<ApplicationService> mockFeatureRef;
         mockFeatureRef = (ServiceReference<ApplicationService>) mock(ServiceReference.class);
 
         StartApplicationCommand startApplicationCommand = new StartApplicationCommand();
-        startApplicationCommand.appName = "TestApp";
+        startApplicationCommand.appName = APP_NAME;
         startApplicationCommand.setBundleContext(bundleContext);
 
         when(bundleContext.getServiceReference(ApplicationService.class))
                 .thenReturn(mockFeatureRef);
         when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
 
-        try {
-            startApplicationCommand.doExecute();
-            verify(testAppService).startApplication("TestApp");
-        } catch (Exception e) {
-            logger.info("Exception: ", e);
-            fail();
-        }
+        startApplicationCommand.doExecute();
+        verify(testAppService).startApplication(APP_NAME);
     }
 }
