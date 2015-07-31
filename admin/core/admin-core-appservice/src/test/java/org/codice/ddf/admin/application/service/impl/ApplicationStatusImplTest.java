@@ -65,10 +65,11 @@ public class ApplicationStatusImplTest {
         ApplicationStatus testStatus = new ApplicationStatusImpl(testApp, testState, testFeatures,
                 testBundles);
 
-        assertEquals(testApp, testStatus.getApplication());
-        assertEquals(testState, testStatus.getState());
-        assertTrue(testStatus.getErrorFeatures().containsAll(testFeatureList));
-        assertTrue(testStatus.getErrorBundles().containsAll(testBundleList));
+        assertEquals("Sanity check for getApplication()", testApp, testStatus.getApplication());
+        assertEquals("Sanity check for getState()", testState, testStatus.getState());
+        assertTrue("Sanity check for getErrorFeatures()",
+                testStatus.getErrorFeatures().containsAll(testFeatureList));
+        assertTrue("Sanity check for getErrorBundles()",
+                testStatus.getErrorBundles().containsAll(testBundleList));
     }
-
 }
