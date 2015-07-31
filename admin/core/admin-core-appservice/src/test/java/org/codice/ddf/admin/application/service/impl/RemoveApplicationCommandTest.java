@@ -13,7 +13,6 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,30 +27,28 @@ import org.slf4j.LoggerFactory;
 public class RemoveApplicationCommandTest {
     private Logger logger = LoggerFactory.getLogger(RemoveApplicationCommand.class);
 
+    private static final String APP_NAME = "TestApp";
     /**
      * Tests the {@link RemoveApplicationCommand} class
+     *
+     * @throws Exception
      */
     @Test
-    public void testRemoveApplicationCommand() {
+    public void testRemoveApplicationCommand() throws Exception {
         ApplicationService testAppService = mock(ApplicationServiceImpl.class);
         BundleContext bundleContext = mock(BundleContext.class);
         ServiceReference<ApplicationService> mockFeatureRef;
         mockFeatureRef = (ServiceReference<ApplicationService>) mock(ServiceReference.class);
 
         RemoveApplicationCommand removeApplicationCommand = new RemoveApplicationCommand();
-        removeApplicationCommand.appName = "TestApp";
+        removeApplicationCommand.appName = APP_NAME;
         removeApplicationCommand.setBundleContext(bundleContext);
 
         when(bundleContext.getServiceReference(ApplicationService.class))
                 .thenReturn(mockFeatureRef);
         when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
 
-        try {
-            removeApplicationCommand.doExecute();
-            verify(testAppService).removeApplication("TestApp");
-        } catch (Exception e) {
-            logger.info("Exception: ", e);
-            fail();
-        }
+        removeApplicationCommand.doExecute();
+        verify(testAppService).removeApplication(APP_NAME);
     }
 }

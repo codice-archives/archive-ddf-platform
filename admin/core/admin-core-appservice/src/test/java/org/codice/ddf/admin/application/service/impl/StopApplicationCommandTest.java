@@ -13,7 +13,6 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,11 +30,15 @@ import org.slf4j.LoggerFactory;
 public class StopApplicationCommandTest {
     private Logger logger = LoggerFactory.getLogger(AddApplicationCommand.class);
 
+    private static final String APP_NAME = "TestApp";
+
     /**
      * Tests the {@link StopApplicationCommand} class and its associated methods
+     *
+     * @throws Exception
      */
     @Test
-    public void testStopApplicationCommandTest() {
+    public void testStopApplicationCommandTest() throws Exception {
         ApplicationService testAppService = mock(ApplicationServiceImpl.class);
         BundleContext bundleContext = mock(BundleContext.class);
         ServiceReference<ApplicationService> mockFeatureRef;
@@ -45,22 +48,49 @@ public class StopApplicationCommandTest {
         ApplicationStatus testStatus = mock(ApplicationStatus.class);
 
         StopApplicationCommand stopApplicationCommand = new StopApplicationCommand();
-        stopApplicationCommand.appName = "TestApp";
+        stopApplicationCommand.appName = APP_NAME;
         stopApplicationCommand.setBundleContext(bundleContext);
 
         when(testStatus.getState()).thenReturn(ApplicationState.ACTIVE);
         when(testAppService.getApplicationStatus(testApp)).thenReturn(testStatus);
-        when(testAppService.getApplication("TestApp")).thenReturn(testApp);
+        when(testAppService.getApplication(APP_NAME)).thenReturn(testApp);
         when(bundleContext.getServiceReference(ApplicationService.class))
                 .thenReturn(mockFeatureRef);
         when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
 
-        try {
-            stopApplicationCommand.doExecute();
-            verify(testAppService).stopApplication("TestApp");
-        } catch (Exception e) {
-            logger.info("Exception", e);
-            fail();
-        }
+        stopApplicationCommand.doExecute();
+        verify(testAppService).stopApplication(APP_NAME);
+    }
+
+    /**
+     * Tests the {@link StopApplicationCommand} class and its associated methods
+     * for the case where the application parameter has already been stopped
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testStopApplicationCommandAlreadyStopped() throws Exception {
+        ApplicationService testAppService = mock(ApplicationServiceImpl.class);
+        BundleContext bundleContext = mock(BundleContext.class);
+        ServiceReference<ApplicationService> mockFeatureRef;
+        mockFeatureRef = (ServiceReference<ApplicationService>) mock(ServiceReference.class);
+
+        Application testApp = mock(ApplicationImpl.class);
+        ApplicationStatus testStatus = mock(ApplicationStatus.class);
+
+        StopApplicationCommand stopApplicationCommand = new StopApplicationCommand();
+        stopApplicationCommand.appName = APP_NAME;
+        stopApplicationCommand.setBundleContext(bundleContext);
+
+        when(testStatus.getState()).thenReturn(ApplicationState.INACTIVE);
+        when(testAppService.getApplicationStatus(testApp)).thenReturn(testStatus);
+        when(testAppService.getApplication(APP_NAME)).thenReturn(testApp);
+        when(bundleContext.getServiceReference(ApplicationService.class))
+                .thenReturn(mockFeatureRef);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
+
+        // Should handle this condition gracefully without throwing an exception
+        // If an exception is thrown, this test fails...
+        stopApplicationCommand.doExecute();
     }
 }

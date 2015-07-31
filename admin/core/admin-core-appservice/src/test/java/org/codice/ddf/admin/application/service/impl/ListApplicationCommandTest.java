@@ -13,7 +13,6 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,6 +25,7 @@ import org.apache.karaf.features.internal.FeatureImpl;
 import org.codice.ddf.admin.application.service.Application;
 import org.codice.ddf.admin.application.service.ApplicationService;
 import org.codice.ddf.admin.application.service.ApplicationStatus;
+import org.junit.Before;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -35,184 +35,115 @@ import org.slf4j.LoggerFactory;
 public class ListApplicationCommandTest {
     private Logger logger = LoggerFactory.getLogger(ListApplicationCommand.class);
 
+    private ApplicationStatus testStatus;
+
+    private Application testApp;
+
+    private Set<Application> testAppSet;
+
+    private ApplicationService testAppService;
+
+    private BundleContext bundleContext;
+
+    private ServiceReference<ApplicationService> mockFeatureRef;
+
+    private Feature testFeature;
+
+    private Set<Feature> featureSet;
+
+    @Before
+    public void setUp() throws Exception {
+        testStatus = mock(ApplicationStatusImpl.class);
+        testApp = mock(Application.class);
+        testAppSet = new HashSet<>();
+        testAppService = mock(ApplicationServiceImpl.class);
+        bundleContext = mock(BundleContext.class);
+        mockFeatureRef = (ServiceReference<ApplicationService>) mock(ServiceReference.class);
+        testFeature = mock(Feature.class);
+        testFeature = mock(FeatureImpl.class);
+        featureSet = new HashSet<>();
+        featureSet.add(testFeature);
+
+        when(testAppService.getApplications()).thenReturn(testAppSet);
+        testAppSet.add(testApp);
+        when(testAppService.getApplicationStatus(testApp)).thenReturn(testStatus);
+        when(testApp.getFeatures()).thenReturn(featureSet);
+
+        when(bundleContext.getServiceReference(ApplicationService.class))
+                .thenReturn(mockFeatureRef);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
+    }
+
     /**
      * Tests the {@link ListApplicationCommand} class for active applications
+     *
+     * @throws Exception
      */
     @Test
-    public void testListApplicationCommandActiveApp() {
-        try {
-            ApplicationStatus testStatus;
-            Application testApp;
-            Set<Application> testAppSet = new HashSet<>();
-            ApplicationService testAppService = mock(ApplicationServiceImpl.class);
+    public void testListApplicationCommandActiveApp() throws Exception {
+        when(testStatus.getState()).thenReturn(ApplicationStatus.ApplicationState.ACTIVE);
 
-            BundleContext bundleContext = mock(BundleContext.class);
-            ServiceReference<ApplicationService> mockFeatureRef;
-            mockFeatureRef = (ServiceReference<ApplicationService>) mock(ServiceReference.class);
+        ListApplicationCommand listApplicationCommand = new ListApplicationCommand();
+        listApplicationCommand.setBundleContext(bundleContext);
 
-            Feature testFeature = mock(FeatureImpl.class);
-            Set<Feature> featureSet = new HashSet<>();
-            featureSet.add(testFeature);
+        listApplicationCommand.doExecute();
 
-            when(testAppService.getApplications()).thenReturn(testAppSet);
-            testApp = mock(Application.class);
-            testAppSet.add(testApp);
-            testStatus = mock(ApplicationStatusImpl.class);
-            when(testAppService.getApplicationStatus(testApp)).thenReturn(testStatus);
-            when(testStatus.getState()).thenReturn(ApplicationStatus.ApplicationState.ACTIVE);
-
-            when(testApp.getFeatures()).thenReturn(featureSet);
-
-            when(bundleContext.getServiceReference(ApplicationService.class))
-                    .thenReturn(mockFeatureRef);
-            when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
-
-            ListApplicationCommand listApplicationCommand = new ListApplicationCommand();
-            listApplicationCommand.setBundleContext(bundleContext);
-
-            listApplicationCommand.doExecute();
-
-            verify(testAppService).getApplications();
-            verify(testAppService).getApplicationStatus(testApp);
-        } catch (Exception e) {
-            logger.info("Exception: ", e);
-            fail();
-        }
+        verify(testAppService).getApplications();
+        verify(testAppService).getApplicationStatus(testApp);
     }
 
     /**
      * Tests the {@link ListApplicationCommand} class for inactive applications
+     *
+     * @throws Exception
      */
     @Test
-    public void testListApplicationCommandInactiveApp() {
-        try {
-            ApplicationStatus testStatus;
-            Application testApp;
-            Set<Application> testAppSet = new HashSet<>();
-            ApplicationService testAppService = mock(ApplicationServiceImpl.class);
+    public void testListApplicationCommandInactiveApp() throws Exception {
+        when(testStatus.getState()).thenReturn(ApplicationStatus.ApplicationState.INACTIVE);
 
-            BundleContext bundleContext = mock(BundleContext.class);
-            ServiceReference<ApplicationService> mockFeatureRef;
-            mockFeatureRef = (ServiceReference<ApplicationService>) mock(ServiceReference.class);
+        ListApplicationCommand listApplicationCommand = new ListApplicationCommand();
+        listApplicationCommand.setBundleContext(bundleContext);
 
-            Feature testFeature = mock(FeatureImpl.class);
-            Set<Feature> featureSet = new HashSet<>();
-            featureSet.add(testFeature);
+        listApplicationCommand.doExecute();
 
-            when(testAppService.getApplications()).thenReturn(testAppSet);
-            testApp = mock(Application.class);
-            testAppSet.add(testApp);
-            testStatus = mock(ApplicationStatusImpl.class);
-            when(testAppService.getApplicationStatus(testApp)).thenReturn(testStatus);
-            when(testStatus.getState()).thenReturn(ApplicationStatus.ApplicationState.INACTIVE);
-
-            when(testApp.getFeatures()).thenReturn(featureSet);
-
-            when(bundleContext.getServiceReference(ApplicationService.class))
-                    .thenReturn(mockFeatureRef);
-            when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
-
-            ListApplicationCommand listApplicationCommand = new ListApplicationCommand();
-            listApplicationCommand.setBundleContext(bundleContext);
-
-            listApplicationCommand.doExecute();
-
-            verify(testAppService).getApplications();
-            verify(testAppService).getApplicationStatus(testApp);
-        } catch (Exception e) {
-            logger.info("Exception: ", e);
-            fail();
-        }
+        verify(testAppService).getApplications();
+        verify(testAppService).getApplicationStatus(testApp);
     }
 
     /**
      * Tests the {@link ListApplicationCommand} class for failed applications
+     *
+     * @throws Exception
      */
     @Test
-    public void testListApplicationCommandFailedApp() {
-        try {
-            ApplicationStatus testStatus;
-            Application testApp;
-            Set<Application> testAppSet = new HashSet<>();
-            ApplicationService testAppService = mock(ApplicationServiceImpl.class);
+    public void testListApplicationCommandFailedApp() throws Exception {
+        when(testStatus.getState()).thenReturn(ApplicationStatus.ApplicationState.FAILED);
 
-            BundleContext bundleContext = mock(BundleContext.class);
-            ServiceReference<ApplicationService> mockFeatureRef;
-            mockFeatureRef = (ServiceReference<ApplicationService>) mock(ServiceReference.class);
+        ListApplicationCommand listApplicationCommand = new ListApplicationCommand();
+        listApplicationCommand.setBundleContext(bundleContext);
 
-            Feature testFeature = mock(FeatureImpl.class);
-            Set<Feature> featureSet = new HashSet<>();
-            featureSet.add(testFeature);
+        listApplicationCommand.doExecute();
 
-            when(testAppService.getApplications()).thenReturn(testAppSet);
-            testApp = mock(Application.class);
-            testAppSet.add(testApp);
-            testStatus = mock(ApplicationStatusImpl.class);
-            when(testAppService.getApplicationStatus(testApp)).thenReturn(testStatus);
-            when(testStatus.getState()).thenReturn(ApplicationStatus.ApplicationState.FAILED);
-
-            when(testApp.getFeatures()).thenReturn(featureSet);
-
-            when(bundleContext.getServiceReference(ApplicationService.class))
-                    .thenReturn(mockFeatureRef);
-            when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
-
-            ListApplicationCommand listApplicationCommand = new ListApplicationCommand();
-            listApplicationCommand.setBundleContext(bundleContext);
-
-            listApplicationCommand.doExecute();
-
-            verify(testAppService).getApplications();
-            verify(testAppService).getApplicationStatus(testApp);
-        } catch (Exception e) {
-            logger.info("Exception: ", e);
-            fail();
-        }
+        verify(testAppService).getApplications();
+        verify(testAppService).getApplicationStatus(testApp);
     }
 
     /**
      * Tests the {@link ListApplicationCommand} class for unknown status applications
+     *
+     * @throws Exception
      */
     @Test
-    public void testListApplicationCommandUnknownApp() {
-        try {
-            ApplicationStatus testStatus;
-            Application testApp;
-            Set<Application> testAppSet = new HashSet<>();
-            ApplicationService testAppService = mock(ApplicationServiceImpl.class);
+    public void testListApplicationCommandUnknownApp() throws Exception {
+        when(testStatus.getState()).thenReturn(ApplicationStatus.ApplicationState.UNKNOWN);
 
-            BundleContext bundleContext = mock(BundleContext.class);
-            ServiceReference<ApplicationService> mockFeatureRef;
-            mockFeatureRef = (ServiceReference<ApplicationService>) mock(ServiceReference.class);
+        ListApplicationCommand listApplicationCommand = new ListApplicationCommand();
+        listApplicationCommand.setBundleContext(bundleContext);
 
-            Feature testFeature = mock(FeatureImpl.class);
-            Set<Feature> featureSet = new HashSet<>();
-            featureSet.add(testFeature);
+        listApplicationCommand.doExecute();
 
-            when(testAppService.getApplications()).thenReturn(testAppSet);
-            testApp = mock(Application.class);
-            testAppSet.add(testApp);
-            testStatus = mock(ApplicationStatusImpl.class);
-            when(testAppService.getApplicationStatus(testApp)).thenReturn(testStatus);
-            when(testStatus.getState()).thenReturn(ApplicationStatus.ApplicationState.UNKNOWN);
-
-            when(testApp.getFeatures()).thenReturn(featureSet);
-
-            when(bundleContext.getServiceReference(ApplicationService.class))
-                    .thenReturn(mockFeatureRef);
-            when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
-
-            ListApplicationCommand listApplicationCommand = new ListApplicationCommand();
-            listApplicationCommand.setBundleContext(bundleContext);
-
-            listApplicationCommand.doExecute();
-
-            verify(testAppService).getApplications();
-            verify(testAppService).getApplicationStatus(testApp);
-        } catch (Exception e) {
-            logger.info("Exception: ", e);
-            fail();
-        }
+        verify(testAppService).getApplications();
+        verify(testAppService).getApplicationStatus(testApp);
     }
 
 }

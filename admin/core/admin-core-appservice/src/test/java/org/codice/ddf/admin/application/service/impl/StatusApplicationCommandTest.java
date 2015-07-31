@@ -13,7 +13,6 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,6 +26,7 @@ import org.codice.ddf.admin.application.service.Application;
 import org.codice.ddf.admin.application.service.ApplicationService;
 import org.codice.ddf.admin.application.service.ApplicationStatus;
 import org.codice.ddf.admin.application.service.ApplicationStatus.ApplicationState;
+import org.junit.Before;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -35,135 +35,110 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class StatusApplicationCommandTest {
+
+    private static final String TEST_APP_NAME = "TestApp";
+
+    private static final String TEST_FEATURE_NAME = "TestFeature";
+
     private Logger logger = LoggerFactory.getLogger(StatusApplicationCommand.class);
+
+    private ApplicationService testAppService;
+
+    private BundleContext bundleContext;
+
+    private ServiceReference<ApplicationService> mockFeatureRef;
+
+    private Application testApp;
+
+    private Feature testFeature;
+
+    private Set<Feature> featureSet;
+
+    private ApplicationStatus testStatus;
+
+    @Before
+    public void setUp() throws Exception {
+        testAppService = mock(ApplicationServiceImpl.class);
+        bundleContext = mock(BundleContext.class);
+        mockFeatureRef = (ServiceReference<ApplicationService>) mock(ServiceReference.class);
+        testApp = mock(ApplicationImpl.class);
+        testFeature = mock(FeatureImpl.class);
+        featureSet = new HashSet<>();
+        featureSet.add(testFeature);
+        testStatus = mock(ApplicationStatusImpl.class);
+
+        when(bundleContext.getServiceReference(ApplicationService.class))
+                .thenReturn(mockFeatureRef);
+        when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
+
+        when(testStatus.getState()).thenReturn(ApplicationState.ACTIVE);
+        when(testFeature.getName()).thenReturn(TEST_FEATURE_NAME);
+        when(testApp.getName()).thenReturn(TEST_APP_NAME);
+        when(testAppService.getApplication(TEST_APP_NAME)).thenReturn(testApp);
+        when(testAppService.getApplicationStatus(testApp)).thenReturn(testStatus);
+
+        when(testStatus.getErrorBundles()).thenReturn(new HashSet<Bundle>());
+        when(testStatus.getErrorFeatures()).thenReturn(new HashSet<Feature>());
+    }
 
     /**
      * Tests the {@link StatusApplicationCommand} class and all associated methods for the case
      * where there are no features not started and no bundles not started
+     *
+     * @throws Exception
      */
     @Test
-    public void testStatusApplicationCommandNoError() {
-        ApplicationService testAppService = mock(ApplicationServiceImpl.class);
-        BundleContext bundleContext = mock(BundleContext.class);
-        ServiceReference<ApplicationService> mockFeatureRef;
-        mockFeatureRef = (ServiceReference<ApplicationService>) mock(ServiceReference.class);
-        Application testApp = mock(ApplicationImpl.class);
-        Feature testFeature = mock(FeatureImpl.class);
-        Set<Feature> featureSet = new HashSet<>();
-        featureSet.add(testFeature);
-        ApplicationStatus testStatus = mock(ApplicationStatusImpl.class);
-
+    public void testStatusApplicationCommandNoError() throws Exception {
         StatusApplicationCommand statusApplicationCommand = new StatusApplicationCommand();
-        statusApplicationCommand.appName = "TestApp";
+        statusApplicationCommand.appName = TEST_APP_NAME;
         statusApplicationCommand.setBundleContext(bundleContext);
 
-        when(testStatus.getErrorBundles()).thenReturn(new HashSet<Bundle>());
-        when(testStatus.getErrorFeatures()).thenReturn(new HashSet<Feature>());
-        when(testStatus.getState()).thenReturn(ApplicationState.ACTIVE);
-        when(testFeature.getName()).thenReturn("TestFeature");
-        when(testApp.getName()).thenReturn("TestApp");
-        when(bundleContext.getServiceReference(ApplicationService.class))
-                .thenReturn(mockFeatureRef);
-        when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
-        when(testAppService.getApplication("TestApp")).thenReturn(testApp);
-        when(testAppService.getApplicationStatus(testApp)).thenReturn(testStatus);
 
-        try {
-            when(testApp.getFeatures()).thenReturn(featureSet);
-            statusApplicationCommand.doExecute();
-            verify(testAppService).getApplicationStatus(testApp);
-        } catch (Exception e) {
-            logger.info("Exception: ", e);
-            fail();
-        }
+        when(testApp.getFeatures()).thenReturn(featureSet);
+        statusApplicationCommand.doExecute();
+        verify(testAppService).getApplicationStatus(testApp);
     }
 
     /**
      * Tests the {@link StatusApplicationCommand} class and all associated methods for the case
      * where there are features that have not been started
+     *
+     * @throws Exception
      */
     @Test
-    public void testStatusApplicationCommandErrorFeatures() {
-        ApplicationService testAppService = mock(ApplicationServiceImpl.class);
-        BundleContext bundleContext = mock(BundleContext.class);
-        ServiceReference<ApplicationService> mockFeatureRef;
-        mockFeatureRef = (ServiceReference<ApplicationService>) mock(ServiceReference.class);
-        Application testApp = mock(ApplicationImpl.class);
-        Feature testFeature = mock(FeatureImpl.class);
-        Set<Feature> featureSet = new HashSet<>();
-        featureSet.add(testFeature);
-        ApplicationStatus testStatus = mock(ApplicationStatusImpl.class);
-        Set<Feature> errorFeatureSet = new HashSet<>();
-        errorFeatureSet.add(testFeature);
+    public void testStatusApplicationCommandErrorFeatures() throws Exception {
+        when(testStatus.getErrorFeatures()).thenReturn(featureSet);
 
         StatusApplicationCommand statusApplicationCommand = new StatusApplicationCommand();
-        statusApplicationCommand.appName = "TestApp";
+        statusApplicationCommand.appName = TEST_APP_NAME;
         statusApplicationCommand.setBundleContext(bundleContext);
 
-        when(testStatus.getErrorBundles()).thenReturn(new HashSet<Bundle>());
-        when(testStatus.getErrorFeatures()).thenReturn(errorFeatureSet);
-        when(testStatus.getState()).thenReturn(ApplicationState.ACTIVE);
-        when(testFeature.getName()).thenReturn("TestFeature");
-        when(testApp.getName()).thenReturn("TestApp");
-        when(bundleContext.getServiceReference(ApplicationService.class))
-                .thenReturn(mockFeatureRef);
-        when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
-        when(testAppService.getApplication("TestApp")).thenReturn(testApp);
-        when(testAppService.getApplicationStatus(testApp)).thenReturn(testStatus);
-
-        try {
-            when(testApp.getFeatures()).thenReturn(featureSet);
-            statusApplicationCommand.doExecute();
-            verify(testAppService).getApplicationStatus(testApp);
-        } catch (Exception e) {
-            logger.info("Exception: ", e);
-            fail();
-        }
+        when(testApp.getFeatures()).thenReturn(featureSet);
+        statusApplicationCommand.doExecute();
+        verify(testAppService).getApplicationStatus(testApp);
     }
 
     /**
      * Tests the {@link StatusApplicationCommand} class and all associated methods for the case
      * where there are bundles that have not been started
+     *
+     * @throws Exception
      */
     @Test
-    public void testStatusApplicationCommandErrorBundles() {
-        ApplicationService testAppService = mock(ApplicationServiceImpl.class);
-        BundleContext bundleContext = mock(BundleContext.class);
-        ServiceReference<ApplicationService> mockFeatureRef;
-        mockFeatureRef = (ServiceReference<ApplicationService>) mock(ServiceReference.class);
-        Application testApp = mock(ApplicationImpl.class);
-        Feature testFeature = mock(FeatureImpl.class);
-        Set<Feature> featureSet = new HashSet<>();
-        featureSet.add(testFeature);
-        ApplicationStatus testStatus = mock(ApplicationStatusImpl.class);
+    public void testStatusApplicationCommandErrorBundles() throws Exception {
         Set<Bundle> errorBundleSet = new HashSet<>();
         Bundle testBundle = mock(Bundle.class);
         errorBundleSet.add(testBundle);
-
-        StatusApplicationCommand statusApplicationCommand = new StatusApplicationCommand();
-        statusApplicationCommand.appName = "TestApp";
-        statusApplicationCommand.setBundleContext(bundleContext);
-
         when(testBundle.getBundleId()).thenReturn((long) 1);
         when(testBundle.getSymbolicName()).thenReturn("TestBundle");
         when(testStatus.getErrorBundles()).thenReturn(errorBundleSet);
-        when(testStatus.getErrorFeatures()).thenReturn(new HashSet<Feature>());
-        when(testStatus.getState()).thenReturn(ApplicationState.ACTIVE);
-        when(testFeature.getName()).thenReturn("TestFeature");
-        when(testApp.getName()).thenReturn("TestApp");
-        when(bundleContext.getServiceReference(ApplicationService.class))
-                .thenReturn(mockFeatureRef);
-        when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
-        when(testAppService.getApplication("TestApp")).thenReturn(testApp);
-        when(testAppService.getApplicationStatus(testApp)).thenReturn(testStatus);
 
-        try {
-            when(testApp.getFeatures()).thenReturn(featureSet);
-            statusApplicationCommand.doExecute();
-            verify(testAppService).getApplicationStatus(testApp);
-        } catch (Exception e) {
-            logger.info("Exception: ", e);
-            fail();
-        }
+        StatusApplicationCommand statusApplicationCommand = new StatusApplicationCommand();
+        statusApplicationCommand.appName = TEST_APP_NAME;
+        statusApplicationCommand.setBundleContext(bundleContext);
+
+        when(testApp.getFeatures()).thenReturn(featureSet);
+        statusApplicationCommand.doExecute();
+        verify(testAppService).getApplicationStatus(testApp);
     }
 }

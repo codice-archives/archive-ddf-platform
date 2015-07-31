@@ -13,7 +13,6 @@
  */
 package org.codice.ddf.admin.application.service.impl;
 
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,9 +34,11 @@ public class TreeApplicationCommandTest {
 
     /**
      * Tests the {@link TreeApplicationCommand} class and its associated methods
+     *
+     * @throws Exception
      */
     @Test
-    public void testTreeApplicationCommand() {
+    public void testTreeApplicationCommand() throws Exception {
         ApplicationService testAppService = mock(ApplicationServiceImpl.class);
         BundleContext bundleContext = mock(BundleContext.class);
         ServiceReference<ApplicationService> mockFeatureRef;
@@ -64,12 +65,7 @@ public class TreeApplicationCommandTest {
                 .thenReturn(mockFeatureRef);
         when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
 
-        try {
-            treeApplicationCommand.doExecute();
-            verify(testAppService).getApplicationTree();
-        } catch (Exception e) {
-            logger.info("Exception: ", e);
-            fail();
-        }
+        treeApplicationCommand.doExecute();
+        verify(testAppService).getApplicationTree();
     }
 }
