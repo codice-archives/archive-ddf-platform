@@ -18,21 +18,30 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 public class ZipFileApplicationDetailsTest {
+
+    private static final String TEST_NAME_1 = "TestName";
+
+    private static final String TEST_NAME_2 = "TestName2";
+
+    private static final String TEST_VERSION_1 = "0.0.0";
+
+    private static final String TEST_VERSION_2 = "0.0.1";
+
     /**
      * Tests the {@link ZipFileApplicationDetails#ZipFileApplicationDetails(String, String)} constructor,
      * and the getters related to it
      */
     @Test
     public void testConstructor() {
-        ZipFileApplicationDetails testZipFile = new ZipFileApplicationDetails("TestName", "0.0.0");
+        ZipFileApplicationDetails testZipFile = new ZipFileApplicationDetails(TEST_NAME_1, TEST_VERSION_1);
 
-        assertEquals("TestName", testZipFile.getName());
-        assertEquals("0.0.0", testZipFile.getVersion());
+        assertEquals(TEST_NAME_1, testZipFile.getName());
+        assertEquals(TEST_VERSION_1, testZipFile.getVersion());
 
-        testZipFile.setName("TestName2");
-        testZipFile.setVersion("0.0.1");
+        testZipFile.setName(TEST_NAME_2);
+        testZipFile.setVersion(TEST_VERSION_2);
 
-        assertEquals("TestName2", testZipFile.getName());
-        assertEquals("0.0.1", testZipFile.getVersion());
+        assertEquals(TEST_NAME_2, testZipFile.getName());
+        assertEquals(TEST_VERSION_2, testZipFile.getVersion());
     }
 }
