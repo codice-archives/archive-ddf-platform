@@ -18,15 +18,19 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 public class ApplicationServiceExceptionTest {
+
+    private static final String TEST_MESSAGE = "TestMessage";
+
+    private static final String TEST_THROWABLE_MESSAGE = "ThrowableMessage";
     /**
      * Tests the {@link ApplicationServiceException#ApplicationServiceException(String)} constructor
      */
     @Test
     public void testApplicationServiceExceptionStringParam() {
         try {
-            throw new ApplicationServiceException("TestMessage");
+            throw new ApplicationServiceException(TEST_MESSAGE);
         } catch (Exception e) {
-            assertEquals("TestMessage", e.getMessage());
+            assertEquals(TEST_MESSAGE, e.getMessage());
         }
     }
 
@@ -36,11 +40,11 @@ public class ApplicationServiceExceptionTest {
     @Test
     public void testApplicationServiceExceptionStringThrowableParams() {
         try {
-            Throwable testThrowable = new Throwable("ThrowableMessage");
-            throw new ApplicationServiceException("TestMessage", testThrowable);
+            Throwable testThrowable = new Throwable(TEST_THROWABLE_MESSAGE);
+            throw new ApplicationServiceException(TEST_MESSAGE, testThrowable);
         } catch (Exception e) {
-            assertEquals("TestMessage", e.getMessage());
-            assertEquals("ThrowableMessage", e.getCause().getMessage());
+            assertEquals(TEST_MESSAGE, e.getMessage());
+            assertEquals(TEST_THROWABLE_MESSAGE, e.getCause().getMessage());
         }
     }
 
@@ -50,10 +54,10 @@ public class ApplicationServiceExceptionTest {
     @Test
     public void testApplicationServiceExceptionThrowableParam() {
         try {
-            Throwable testThrowable = new Throwable("ThrowableMessage");
+            Throwable testThrowable = new Throwable(TEST_THROWABLE_MESSAGE);
             throw new ApplicationServiceException(testThrowable);
         } catch (Exception e) {
-            assertEquals("ThrowableMessage", e.getCause().getMessage());
+            assertEquals(TEST_THROWABLE_MESSAGE, e.getCause().getMessage());
         }
     }
 }
