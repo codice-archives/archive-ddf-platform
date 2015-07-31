@@ -13,9 +13,11 @@
  */
 package org.codice.ddf.admin.application.rest;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.any;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,87 +30,260 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.activation.DataHandler;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
+import org.codice.ddf.admin.application.service.Application;
 import org.codice.ddf.admin.application.service.ApplicationService;
+import org.codice.ddf.admin.application.service.ApplicationServiceException;
+import org.eclipse.jetty.http.HttpStatus;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.LoggingEvent;
+import ch.qos.logback.core.Appender;
+
 public class ApplicationUploadEndpointTest {
+    private static final String FILENAME_CONTENT_DISPOSITION_PARAMETER_NAME = "filename";
+
+    private static final String TEST_FILE_LOCATION = "target/ApplicationUploadEndpointTest/";
+
+    private static final String TEST_FILE_NAME = "/test-kar.jar";
+
+    private static final String BAD_FILE_NAME = "/test-badfile";
+
+    private static final String WRONG_FILE_TYPE = "Wrong file type.";
+
+    private static final String IOEX_STRING = "IOException";
+
     private Logger logger = LoggerFactory.getLogger(ApplicationUploadEndpoint.class);
 
-    /**
-     * Tests the {@link ApplicationUploadEndpoint#update(MultipartBody, UriInfo)} method
-     */
-    @Test
-    public void testApplicationUploadEndpointUpdate() {
-        ApplicationService testAppService = mock(ApplicationService.class);
-        MultipartBody testMultipartBody = mock(MultipartBody.class);
-        UriInfo testUriInfo = mock(UriInfo.class);
-        List<Attachment> attachmentList = new ArrayList<>();
-        Attachment testAttach1 = mock(Attachment.class);
+    private ApplicationService testAppService;
+
+    private MultipartBody testMultipartBody;
+
+    private UriInfo testUriInfo;
+
+    private List<Attachment> attachmentList;
+
+    private Attachment testAttach1;
+
+    private ContentDisposition testDisp;
+
+    private DataHandler testDataHandler;
+
+    private File testFile;
+
+    private InputStream testIS;
+
+    @Before
+    public void setUp() throws Exception {
+        testAppService = mock(ApplicationService.class);
+        testMultipartBody = mock(MultipartBody.class);
+        testUriInfo = mock(UriInfo.class);
+        attachmentList = new ArrayList<>();
+        testAttach1 = mock(Attachment.class);
+        testDisp = mock(ContentDisposition.class);
+        testDataHandler = mock(DataHandler.class);
         attachmentList.add(testAttach1);
-        ContentDisposition testDisp = mock(ContentDisposition.class);
-        DataHandler testDataHandler = mock(DataHandler.class);
+        testFile = new File(File.class.getResource(TEST_FILE_NAME).getPath());
+        testIS = new FileInputStream(testFile);
 
         when(testAttach1.getDataHandler()).thenReturn(testDataHandler);
         when(testAttach1.getContentDisposition()).thenReturn(testDisp);
         when(testMultipartBody.getAllAttachments()).thenReturn(attachmentList);
+        when(testDataHandler.getInputStream()).thenReturn(testIS);
+        when(testDisp.getParameter(FILENAME_CONTENT_DISPOSITION_PARAMETER_NAME))
+                .thenReturn(TEST_FILE_NAME);
+    }
 
-        try {
-            File testFile = new File(File.class.getResource("/test-kar.zip").getPath());
-            InputStream testIS = new FileInputStream(testFile);
-            when(testDataHandler.getInputStream()).thenReturn(testIS);
+    /**
+     * Tests the {@link ApplicationUploadEndpoint#update(MultipartBody, UriInfo)} method
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testApplicationUploadEndpointUpdate() throws Exception {
+        ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
+                testAppService);
+        applicationUploadEndpoint.setDefaultFileLocation(TEST_FILE_LOCATION);
 
-            ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
-                    testAppService);
+        Response response = applicationUploadEndpoint.update(testMultipartBody, testUriInfo);
+        Response testResponse = Response.ok("{\"status\":\"success\"}").type("application/json")
+                .build();
+        assertThat("Returned status is success", response.getStatus(), is(testResponse.getStatus()));
+    }
 
-            applicationUploadEndpoint
-                    .setDefaultFileLocation("target/ApplicationUploadEndpointTest");
-            assertNotNull(applicationUploadEndpoint.update(testMultipartBody, testUriInfo));
-        } catch (Exception e) {
-            logger.info("Exception: ", e);
-            fail();
-        }
+    /**
+     * Tests the {@link ApplicationUploadEndpoint#update(MultipartBody, UriInfo)} method
+     * for the case where the application exists and has already been started
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testApplicationUploadEndpointUpdateAppStarted() throws Exception {
+        Application testApp = mock(Application.class);
+        when(testAppService.getApplication(anyString())).thenReturn(testApp);
+        when(testAppService.isApplicationStarted(testApp)).thenReturn(true);
+
+        ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
+                testAppService);
+        applicationUploadEndpoint.setDefaultFileLocation(TEST_FILE_LOCATION);
+        Response response = applicationUploadEndpoint.update(testMultipartBody, testUriInfo);
+
+        Response testResponse = Response.ok("{\"status\":\"success\"}").type("application/json")
+                .build();
+        assertThat("Returned status is success", response.getStatus(),
+                is(testResponse.getStatus()));
+        verify(testAppService).removeApplication(testApp);
+        verify(testAppService).startApplication(anyString());
+    }
+
+    /**
+     * Tests the {@link ApplicationUploadEndpoint#update(MultipartBody, UriInfo)} method
+     * for the case where the file can not be found
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testApplicationUploadEndpointUpdateFileNotFound() throws Exception {
+        when(testMultipartBody.getAllAttachments()).thenReturn(new ArrayList<Attachment>());
+
+        ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
+                testAppService);
+        applicationUploadEndpoint.setDefaultFileLocation(TEST_FILE_LOCATION);
+
+        Response response = applicationUploadEndpoint.update(testMultipartBody, testUriInfo);
+        Response expectedResponse = Response.serverError().build();
+        assertThat("Response should indicate server error.", response.getStatus(),
+                is(expectedResponse.getStatus()));
+
     }
 
     /**
      * Tests the {@link ApplicationUploadEndpoint#create(MultipartBody, UriInfo)} method
+     *
+     * @throws Exception
      */
     @Test
-    public void testApplicationUploadEndpointCreate() {
-        ApplicationService testAppService = mock(ApplicationService.class);
-        MultipartBody testMultipartBody = mock(MultipartBody.class);
-        UriInfo testUriInfo = mock(UriInfo.class);
-        List<Attachment> attachmentList = new ArrayList<>();
-        Attachment testAttach1 = mock(Attachment.class);
-        attachmentList.add(testAttach1);
-        ContentDisposition testDisp = mock(ContentDisposition.class);
-        DataHandler testDataHandler = mock(DataHandler.class);
+    public void testApplicationUploadEndpointCreate() throws Exception {
+        ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
+                testAppService);
+        applicationUploadEndpoint.setDefaultFileLocation(TEST_FILE_LOCATION);
+        Response response = applicationUploadEndpoint.create(testMultipartBody, testUriInfo);
 
-        when(testAttach1.getDataHandler()).thenReturn(testDataHandler);
-        when(testAttach1.getContentDisposition()).thenReturn(testDisp);
-        when(testMultipartBody.getAllAttachments()).thenReturn(attachmentList);
+        Response expectedResponse = Response.ok().build();
+        assertThat("No errors reported by response", response.getStatus(),
+                is(expectedResponse.getStatus()));
+        verify(testAppService).addApplication(Mockito.any(URI.class));
+    }
 
-        try {
-            File testFile = new File(File.class.getResource("/test-kar.zip").getPath());
-            InputStream testIS = new FileInputStream(testFile);
-            when(testDataHandler.getInputStream()).thenReturn(testIS);
+    /**
+     * Tests the {@link ApplicationUploadEndpoint#create(MultipartBody, UriInfo)} method
+     * for the case where an ApplicationServiceException is thrown
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testApplicationUploadEndpointCreateApplicationServiceException() throws Exception {
+        ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
+                testAppService);
 
-            ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
-                    testAppService);
+        doThrow(new ApplicationServiceException()).when(testAppService)
+                .addApplication(Mockito.any(URI.class));
 
-            applicationUploadEndpoint
-                    .setDefaultFileLocation("target/ApplicationUploadEndpointTest");
-            assertNotNull(applicationUploadEndpoint.create(testMultipartBody, testUriInfo));
-            verify(testAppService).addApplication(any(URI.class));
-        } catch (Exception e) {
-            logger.info("Exception: ", e);
-            fail();
-        }
+        applicationUploadEndpoint.setDefaultFileLocation(TEST_FILE_LOCATION);
+
+        Response response = applicationUploadEndpoint.create(testMultipartBody, testUriInfo);
+
+        Response expectedResponse = Response.serverError().build();
+
+        assertThat("Response should report server error.", response.getStatus(),
+                is(expectedResponse.getStatus()));
+    }
+
+    /**
+     * Tests the {@link ApplicationUploadEndpoint#create(MultipartBody, UriInfo)} method
+     * for the case where the source file has an invalid type
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testApplicationUploadEndpointCreateInvalidType() throws Exception {
+        ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory
+                .getLogger(Logger.ROOT_LOGGER_NAME);
+        final Appender mockAppender = mock(Appender.class);
+        when(mockAppender.getName()).thenReturn("MOCK");
+        root.addAppender(mockAppender);
+        root.setLevel(Level.ALL);
+
+        ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
+                testAppService);
+
+        testFile = new File(File.class.getResource(BAD_FILE_NAME).getPath());
+        testIS = mock(InputStream.class);
+
+        when(testIS.available()).thenReturn(1);
+        when(testDataHandler.getInputStream()).thenReturn(testIS);
+        when(testDisp.getParameter(FILENAME_CONTENT_DISPOSITION_PARAMETER_NAME))
+                .thenReturn(BAD_FILE_NAME);
+
+        applicationUploadEndpoint.setDefaultFileLocation(TEST_FILE_LOCATION);
+
+        Response response = applicationUploadEndpoint.create(testMultipartBody, testUriInfo);
+
+        Response expectedResponse = Response.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE_415).build();
+
+        verify(mockAppender).doAppend(argThat(new ArgumentMatcher() {
+            @Override
+            public boolean matches(final Object argument) {
+                return ((LoggingEvent) argument).getFormattedMessage().contains(WRONG_FILE_TYPE);
+            }
+        }));
+    }
+
+    /**
+     * Tests the {@link ApplicationUploadEndpoint#create(MultipartBody, UriInfo)} method
+     * for the case where the source file causes an IOException when it is read
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testApplicationUploadEndpointCreateIOException() throws Exception {
+        ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory
+                .getLogger(Logger.ROOT_LOGGER_NAME);
+        final Appender mockAppender = mock(Appender.class);
+        when(mockAppender.getName()).thenReturn("MOCK");
+        root.addAppender(mockAppender);
+        root.setLevel(Level.ALL);
+
+        ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
+                testAppService);
+
+        testFile = new File(File.class.getResource(BAD_FILE_NAME).getPath());
+        testIS = new FileInputStream(testFile);
+
+        when(testDataHandler.getInputStream()).thenReturn(testIS);
+        when(testDisp.getParameter(FILENAME_CONTENT_DISPOSITION_PARAMETER_NAME))
+                .thenReturn(BAD_FILE_NAME);
+
+        applicationUploadEndpoint.setDefaultFileLocation(TEST_FILE_LOCATION);
+
+        applicationUploadEndpoint.create(testMultipartBody, testUriInfo);
+
+        verify(mockAppender).doAppend(argThat(new ArgumentMatcher() {
+            @Override
+            public boolean matches(final Object argument) {
+                return ((LoggingEvent) argument).getFormattedMessage().contains(IOEX_STRING);
+            }
+        }));
     }
 }
