@@ -21,6 +21,25 @@ import org.apache.karaf.features.Feature;
 import org.junit.Test;
 
 public class FeatureDetailsTest {
+
+    private static final String TEST_FEATURE_NAME = "TestFeature";
+
+    private static final String TEST_FEATURE_ID = "001";
+
+    private static final String TEST_FEATURE_VERSION = "0.0.0";
+
+    private static final String TEST_FEATURE_INSTALL = "TestInstallString";
+
+    private static final String TEST_FEATURE_DESCRIP = "Feature for testing FeatureDetails";
+
+    private static final String TEST_FEATURE_DETAILS = "TestDetails";
+
+    private static final String TEST_FEATURE_RESOLVER = "TestResolver";
+
+    private static final String TEST_FEATURE_STATUS = "TestStatus";
+
+    private static final String TEST_FEATURE_REPO = "TestRepo";
+
     /**
      * Tests the {@link FeatureDetails#FeatureDetails(Feature, String, String)} constructor,
      * and all associated getters
@@ -28,24 +47,25 @@ public class FeatureDetailsTest {
     @Test
     public void testFeatureDetails() {
         Feature testFeature = mock(Feature.class);
-        when(testFeature.getName()).thenReturn("TestFeature");
-        when(testFeature.getId()).thenReturn("001");
-        when(testFeature.getVersion()).thenReturn("0.0.0");
-        when(testFeature.getInstall()).thenReturn("TestInstallString");
-        when(testFeature.getDescription()).thenReturn("Feature for testing FeatureDetails");
-        when(testFeature.getDetails()).thenReturn("TestDetails");
-        when(testFeature.getResolver()).thenReturn("TestResolver");
+        when(testFeature.getName()).thenReturn(TEST_FEATURE_NAME);
+        when(testFeature.getId()).thenReturn(TEST_FEATURE_ID);
+        when(testFeature.getVersion()).thenReturn(TEST_FEATURE_VERSION);
+        when(testFeature.getInstall()).thenReturn(TEST_FEATURE_INSTALL);
+        when(testFeature.getDescription()).thenReturn(TEST_FEATURE_DESCRIP);
+        when(testFeature.getDetails()).thenReturn(TEST_FEATURE_DETAILS);
+        when(testFeature.getResolver()).thenReturn(TEST_FEATURE_RESOLVER);
 
-        FeatureDetails testDetails = new FeatureDetails(testFeature, "TestStatus", "TestRepo");
+        FeatureDetails testDetails = new FeatureDetails(testFeature, TEST_FEATURE_STATUS,
+                TEST_FEATURE_REPO);
 
-        assertEquals("TestFeature", testDetails.getName());
-        assertEquals("001", testDetails.getId());
-        assertEquals("0.0.0", testDetails.getVersion());
-        assertEquals("TestInstallString", testDetails.getInstall());
-        assertEquals("Feature for testing FeatureDetails", testDetails.getDescription());
-        assertEquals("TestDetails", testDetails.getDetails());
-        assertEquals("TestResolver", testDetails.getResolver());
-        assertEquals("TestRepo", testDetails.getRepository());
-        assertEquals("TestStatus", testDetails.getStatus());
+        assertEquals(TEST_FEATURE_NAME, testDetails.getName());
+        assertEquals(TEST_FEATURE_ID, testDetails.getId());
+        assertEquals(TEST_FEATURE_VERSION, testDetails.getVersion());
+        assertEquals(TEST_FEATURE_INSTALL, testDetails.getInstall());
+        assertEquals(TEST_FEATURE_DESCRIP, testDetails.getDescription());
+        assertEquals(TEST_FEATURE_DETAILS, testDetails.getDetails());
+        assertEquals(TEST_FEATURE_RESOLVER, testDetails.getResolver());
+        assertEquals(TEST_FEATURE_REPO, testDetails.getRepository());
+        assertEquals(TEST_FEATURE_STATUS, testDetails.getStatus());
     }
 }
