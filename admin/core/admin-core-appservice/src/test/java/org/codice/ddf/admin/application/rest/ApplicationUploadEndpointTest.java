@@ -15,6 +15,7 @@ package org.codice.ddf.admin.application.rest;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.doThrow;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ import javax.activation.DataHandler;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
@@ -63,6 +66,10 @@ public class ApplicationUploadEndpointTest {
     private static final String WRONG_FILE_TYPE = "Wrong file type.";
 
     private static final String IOEX_STRING = "IOException";
+
+    private static final String FILE_NOT_FOUND = "No file attachment found";
+
+    private static final String USING_DEFAULT = "Filename not found, using default.";
 
     private Logger logger = LoggerFactory.getLogger(ApplicationUploadEndpoint.class);
 
@@ -263,15 +270,11 @@ public class ApplicationUploadEndpointTest {
         final Appender mockAppender = mock(Appender.class);
         when(mockAppender.getName()).thenReturn("MOCK");
         root.addAppender(mockAppender);
-        root.setLevel(Level.ALL);
 
         ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
                 testAppService);
 
-        testFile = new File(File.class.getResource(BAD_FILE_NAME).getPath());
-        testIS = new FileInputStream(testFile);
-
-        when(testDataHandler.getInputStream()).thenReturn(testIS);
+        doThrow(new IOException()).when(testDataHandler).getInputStream();
         when(testDisp.getParameter(FILENAME_CONTENT_DISPOSITION_PARAMETER_NAME))
                 .thenReturn(BAD_FILE_NAME);
 
@@ -283,6 +286,80 @@ public class ApplicationUploadEndpointTest {
             @Override
             public boolean matches(final Object argument) {
                 return ((LoggingEvent) argument).getFormattedMessage().contains(IOEX_STRING);
+            }
+        }));
+    }
+
+    /**
+     * Tests the {@link ApplicationUploadEndpoint#create(MultipartBody, UriInfo)} method
+     * for the case where the file cannot be found (inside of createFileAttachement(..))
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testApplicationUploadEndpointCreateFileNotFound() throws Exception {
+        ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory
+                .getLogger(Logger.ROOT_LOGGER_NAME);
+        final Appender mockAppender = mock(Appender.class);
+        when(mockAppender.getName()).thenReturn("MOCK");
+        root.addAppender(mockAppender);
+        root.setLevel(Level.ALL);
+
+        ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
+                testAppService);
+
+        testFile = new File(File.class.getResource(TEST_FILE_NAME).getPath());
+        testIS = null;
+
+        when(testDataHandler.getInputStream()).thenReturn(testIS);
+        when(testDisp.getParameter(FILENAME_CONTENT_DISPOSITION_PARAMETER_NAME))
+                .thenReturn(TEST_FILE_NAME);
+
+        applicationUploadEndpoint.setDefaultFileLocation(TEST_FILE_LOCATION);
+
+        applicationUploadEndpoint.create(testMultipartBody, testUriInfo);
+
+        verify(mockAppender).doAppend(argThat(new ArgumentMatcher() {
+            @Override
+            public boolean matches(final Object argument) {
+                return ((LoggingEvent) argument).getFormattedMessage().contains(FILE_NOT_FOUND);
+            }
+        }));
+    }
+
+    /**
+     * Tests the {@link ApplicationUploadEndpoint#create(MultipartBody, UriInfo)} method
+     * for the case where the filename is empty
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testApplicationUploadEndpointCreateEmptyFilename() throws Exception {
+        ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory
+                .getLogger(Logger.ROOT_LOGGER_NAME);
+        final Appender mockAppender = mock(Appender.class);
+        when(mockAppender.getName()).thenReturn("MOCK");
+        root.addAppender(mockAppender);
+        root.setLevel(Level.ALL);
+
+        ApplicationUploadEndpoint applicationUploadEndpoint = new ApplicationUploadEndpoint(
+                testAppService);
+
+        testFile = new File(File.class.getResource(TEST_FILE_NAME).getPath());
+        testIS = new FileInputStream(testFile);
+
+        when(testDataHandler.getInputStream()).thenReturn(testIS);
+        when(testDisp.getParameter(FILENAME_CONTENT_DISPOSITION_PARAMETER_NAME))
+                .thenReturn(StringUtils.EMPTY);
+
+        applicationUploadEndpoint.setDefaultFileLocation(TEST_FILE_LOCATION);
+
+        applicationUploadEndpoint.create(testMultipartBody, testUriInfo);
+
+        verify(mockAppender).doAppend(argThat(new ArgumentMatcher() {
+            @Override
+            public boolean matches(final Object argument) {
+                return ((LoggingEvent) argument).getFormattedMessage().contains(USING_DEFAULT);
             }
         }));
     }
