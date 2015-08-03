@@ -14,8 +14,8 @@
 package org.codice.ddf.admin.application.service.impl;
 
 import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -62,7 +62,6 @@ public class AddApplicationCommandTest {
         when(bundleContext.getServiceReference(ApplicationService.class))
                 .thenReturn(mockFeatureRef);
         when(bundleContext.getService(mockFeatureRef)).thenReturn(testAppService);
-
 
         addApplicationCommand.doExecute();
         verify(testAppService).addApplication(any(URI.class));
@@ -124,9 +123,7 @@ public class AddApplicationCommandTest {
         doThrow(new ApplicationServiceException()).when(testAppService)
                 .addApplication(any(URI.class));
 
-
         addApplicationCommand.doExecute();
-
 
         verify(mockAppender).doAppend(argThat(new ArgumentMatcher() {
             @Override
@@ -167,9 +164,7 @@ public class AddApplicationCommandTest {
         doThrow(new IllegalStateException()).when(bundleContext)
                 .ungetService(any(ServiceReference.class));
 
-
         addApplicationCommand.doExecute();
-
 
         verify(mockAppender).doAppend(argThat(new ArgumentMatcher() {
             @Override

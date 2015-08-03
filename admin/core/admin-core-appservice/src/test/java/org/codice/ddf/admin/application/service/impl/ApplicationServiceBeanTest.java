@@ -19,11 +19,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -670,7 +670,7 @@ public class ApplicationServiceBeanTest {
      * Tests the {@link ApplicationServiceBean#getServices(String)} method
      * for the case where the services do not have the "configurations" key
      * and there is MetatypeInformation present for each service.
-     *
+     * <p>
      * This test mostly just checks that
      *
      * @throws Exception
@@ -691,8 +691,8 @@ public class ApplicationServiceBeanTest {
         MetaTypeInformation testMTI = mock(MetaTypeInformation.class);
         when(testServiceTracker.getService()).thenReturn(testMTS);
         when(testMTS.getMetaTypeInformation(any(Bundle.class))).thenReturn(testMTI);
-        when(testMTI.getPids()).thenReturn(new String[]{"001", "002"});
-        when(testMTI.getFactoryPids()).thenReturn(new String[]{"001", "002"});
+        when(testMTI.getPids()).thenReturn(new String[] {"001", "002"});
+        when(testMTI.getFactoryPids()).thenReturn(new String[] {"001", "002"});
 
         Bundle testBundle = mock(Bundle.class);
         Bundle[] bundles = {testBundle};

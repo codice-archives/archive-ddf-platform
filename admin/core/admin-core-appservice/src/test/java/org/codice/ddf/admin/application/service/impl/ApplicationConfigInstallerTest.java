@@ -26,7 +26,6 @@ import java.net.URI;
 import java.net.URL;
 
 import org.apache.karaf.features.FeaturesService;
-import org.codice.ddf.admin.application.service.Application;
 import org.codice.ddf.admin.application.service.ApplicationService;
 import org.codice.ddf.admin.application.service.ApplicationServiceException;
 import org.junit.Test;
@@ -62,8 +61,6 @@ public class ApplicationConfigInstallerTest {
     private static final String RUN_NO_CONFIG = "No config file located, cannot load from it.";
 
     private static final String RUN_INVALID_URI = "Could not install application, location is not a valid URI";
-
-    private static final String RUN_NO_FILE = "Could not file the configuration file";
 
     /**
      * Tests with a valid file that contains one application that all of the
@@ -212,8 +209,8 @@ public class ApplicationConfigInstallerTest {
         root.addAppender(mockAppender);
         root.setLevel(Level.ALL);
 
-        ApplicationConfigInstaller configInstaller = new ApplicationConfigInstaller(
-                BAD_FILE, null, null, START_FEATURE, STOP_FEATURE);
+        ApplicationConfigInstaller configInstaller = new ApplicationConfigInstaller(BAD_FILE, null,
+                null, START_FEATURE, STOP_FEATURE);
 
         configInstaller.run();
 

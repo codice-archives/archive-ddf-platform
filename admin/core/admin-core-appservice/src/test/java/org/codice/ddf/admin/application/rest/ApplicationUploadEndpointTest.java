@@ -15,7 +15,6 @@ package org.codice.ddf.admin.application.rest;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.doThrow;
@@ -126,7 +125,8 @@ public class ApplicationUploadEndpointTest {
         Response response = applicationUploadEndpoint.update(testMultipartBody, testUriInfo);
         Response testResponse = Response.ok("{\"status\":\"success\"}").type("application/json")
                 .build();
-        assertThat("Returned status is success", response.getStatus(), is(testResponse.getStatus()));
+        assertThat("Returned status is success", response.getStatus(),
+                is(testResponse.getStatus()));
     }
 
     /**
