@@ -46,8 +46,6 @@ public class LdapClaimsHandler extends org.apache.cxf.sts.claims.LdapClaimsHandl
 
     private LDAPConnectionFactory connectionFactory;
 
-    private String userBaseDn;
-
     private String bindUserCredentials;
 
     private String bindUserDN;
@@ -64,13 +62,6 @@ public class LdapClaimsHandler extends org.apache.cxf.sts.claims.LdapClaimsHandl
         this.connectionFactory = connection;
     }
 
-    public String getUserBaseDn() {
-        return userBaseDn;
-    }
-
-    public void setUserBaseDn(String userBaseDN) {
-        this.userBaseDn = userBaseDN;
-    }
 
     public String getPropertyFileLocation() {
         return propertyFileLocation;
@@ -120,14 +111,12 @@ public class LdapClaimsHandler extends org.apache.cxf.sts.claims.LdapClaimsHandl
             String[] searchAttributes = null;
             searchAttributes = searchAttributeList.toArray(new String[searchAttributeList.size()]);
 
-            LOGGER.trace("Executing ldap search with base dn of {} and filter of {}",
-                    this.userBaseDn, filter.toString());
+            LOGGER.trace("Executing ldap search with base dn of {} and filter of {}", this.getUserBaseDN(), filter.toString());
             connection = connectionFactory.getConnection();
             if (connection != null) {
                 connection.bind(bindUserDN, bindUserCredentials.toCharArray());
                 ConnectionEntryReader entryReader = connection
-                        .search((this.userBaseDn == null) ? "" : this.userBaseDn,
-                                SearchScope.WHOLE_SUBTREE, filter.toString(), searchAttributes);
+                        .search((this.getUserBaseDN() == null) ? "" : this.getUserBaseDN(), SearchScope.WHOLE_SUBTREE, filter.toString(), searchAttributes);
 
                 SearchResultEntry entry;
                 while (entryReader.hasNext()) {
