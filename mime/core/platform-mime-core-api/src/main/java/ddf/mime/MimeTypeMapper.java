@@ -31,7 +31,7 @@ public interface MimeTypeMapper {
      * @param contentType
      *            the mime type
      * @return the file extension mapped to the specified mime type
-     * @throws MimeTypeException
+     * @throws MimeTypeResolutionException
      *             if any problems encountered during mime type mapping
      */
     public String getFileExtensionForMimeType(String contentType)
@@ -44,7 +44,7 @@ public interface MimeTypeMapper {
      * @param fileExtension
      *            the file extension to look up the mime type for
      * @return the mime type mapped to the specified file extension
-     * @throws MimeTypeException
+     * @throws MimeTypeResolutionException
      *             if any problems encountered during mime type mapping
      */
     public String getMimeTypeForFileExtension(String fileExtension)
