@@ -21,12 +21,11 @@
 
     <groupId>ddf.platform.security</groupId>
     <artifactId>security</artifactId>
-    <version>2.7.2-SNAPSHOT</version>
     <name>DDF Platform Security</name>
     <packaging>pom</packaging>
 
     <properties>
-        <ddf.platform.app.version>2.7.2-SNAPSHOT</ddf.platform.app.version>
+        <ddf.platform.app.version>${project.version}</ddf.platform.app.version>
         <jasypt.version>1.9.0</jasypt.version>
         <wss4j.version>2.0.3</wss4j.version>
         <powermock.version>1.5.4</powermock.version>
