@@ -19,6 +19,8 @@
         <version>2.7.2-SNAPSHOT</version>
     </parent>
 
+    <groupId>ddf.platform.security</groupId>
+
     <artifactId>security</artifactId>
     <name>DDF Platform Security</name>
     <packaging>pom</packaging>
