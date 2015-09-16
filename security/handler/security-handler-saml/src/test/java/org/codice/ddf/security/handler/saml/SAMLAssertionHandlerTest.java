@@ -15,11 +15,20 @@ package org.codice.ddf.security.handler.saml;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 
 import javax.servlet.FilterChain;
 import javax.servlet.http.Cookie;
@@ -29,6 +38,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.IOUtils;
 import org.apache.cxf.common.util.Base64Utility;
 import org.apache.cxf.helpers.DOMUtils;
 import org.apache.cxf.rs.security.saml.DeflateEncoderDecoder;
@@ -70,7 +81,7 @@ public class SAMLAssertionHandlerTest {
      * method, getNormalizedToken(), when given a valid HttpServletRequest.
      */
     @Test
-    public void testGetNormalizedTokenSuccess() throws Exception {
+    public void testGetNormalizedTokenSuccessWithCookie() throws Exception {
         SAMLAssertionHandler handler = new SAMLAssertionHandler();
 
         HttpServletRequest request = mock(HttpServletRequest.class);
@@ -95,7 +106,7 @@ public class SAMLAssertionHandlerTest {
      * method, getNormalizedToken(), when given an invalid HttpServletRequest.
      */
     @Test
-    public void testGetNormalizedTokenFailure() {
+    public void testGetNormalizedTokenFailurewithCookie() {
         SAMLAssertionHandler handler = new SAMLAssertionHandler();
 
         HttpServletRequest request = mock(HttpServletRequest.class);
@@ -103,6 +114,51 @@ public class SAMLAssertionHandlerTest {
         FilterChain chain = mock(FilterChain.class);
 
         when(request.getCookies()).thenReturn(null);
+
+        HandlerResult result = handler.getNormalizedToken(request, response, chain, true);
+
+        assertNotNull(result);
+        assertEquals(HandlerResult.Status.NO_ACTION, result.getStatus());
+    }
+
+    /**
+     * This test ensures the proper functionality of SAMLAssertionHandler's
+     * method, getNormalizedToken(), when given a valid HttpServletRequest.
+     */
+    @Test public void testGetNormalizedTokenSuccessWithHeader() throws Exception {
+        SAMLAssertionHandler handler = new SAMLAssertionHandler();
+
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        FilterChain chain = mock(FilterChain.class);
+
+        Element assertion = readDocument("/saml.xml").getDocumentElement();
+        String assertionId = assertion.getAttributeNodeNS(null, "ID").getNodeValue();
+        SecurityToken samlToken = new SecurityToken(assertionId, assertion, null);
+        SamlAssertionWrapper wrappedAssertion = new SamlAssertionWrapper(samlToken.getToken());
+        String saml = wrappedAssertion.assertionToString();
+
+        doReturn("SAML " + encodeSaml(saml)).when(request)
+                .getHeader(SAMLAssertionHandler.SAML_HEADER_NAME);
+
+        HandlerResult result = handler.getNormalizedToken(request, response, chain, true);
+
+        assertNotNull(result);
+        assertEquals(HandlerResult.Status.COMPLETED, result.getStatus());
+    }
+
+    /**
+     * This test ensures the proper functionality of SAMLAssertionHandler's
+     * method, getNormalizedToken(), when given an invalid HttpServletRequest.
+     */
+    @Test public void testGetNormalizedTokenFailureWithHeader() {
+        SAMLAssertionHandler handler = new SAMLAssertionHandler();
+
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        FilterChain chain = mock(FilterChain.class);
+
+        doReturn(null).when(request).getHeader(SAMLAssertionHandler.SAML_HEADER_NAME);
 
         HandlerResult result = handler.getNormalizedToken(request, response, chain, true);
 
@@ -134,5 +190,33 @@ public class SAMLAssertionHandlerTest {
         DeflateEncoderDecoder deflateEncoderDecoder = new DeflateEncoderDecoder();
         byte[] deflatedToken = deflateEncoderDecoder.deflateToken(samlStr.getBytes());
         return Base64Utility.encode(deflatedToken);
+    }
+
+    /**
+     * Encodes the SAML assertion as a deflated Base64 String so that it can be used as a Header.
+     *
+     * @param token SAML assertion as a string
+     * @return String
+     * @throws WSSecurityException if the assertion in the token cannot be converted
+     */
+    public static String encodeSaml(String token) throws WSSecurityException {
+        ByteArrayOutputStream tokenBytes = new ByteArrayOutputStream();
+        try (OutputStream tokenStream = new DeflaterOutputStream(tokenBytes,
+                new Deflater(Deflater.DEFAULT_COMPRESSION, false))) {
+            IOUtils.copy(new ByteArrayInputStream(token.getBytes(StandardCharsets.UTF_8)),
+                    tokenStream);
+            tokenStream.close();
+
+            return new String(Base64.encodeBase64(tokenBytes.toByteArray()));
+        } catch (IOException e) {
+            throw new WSSecurityException(WSSecurityException.ErrorCode.FAILURE, e);
+        }
+    }
+
+    public static String decodeSaml(String encodedToken) throws IOException {
+        byte[] deflatedToken = Base64.decodeBase64(encodedToken);
+        InputStream is = new InflaterInputStream(new ByteArrayInputStream(deflatedToken),
+                new Inflater(false));
+        return org.apache.commons.io.IOUtils.toString(is, "UTF-8");
     }
 }
