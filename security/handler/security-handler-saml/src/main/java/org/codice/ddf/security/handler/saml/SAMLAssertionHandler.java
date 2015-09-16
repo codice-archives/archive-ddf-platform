@@ -13,6 +13,7 @@
  */
 package org.codice.ddf.security.handler.saml;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -20,6 +21,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -31,6 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.stream.XMLStreamException;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.cxf.common.util.Base64Exception;
 import org.apache.cxf.common.util.Base64Utility;
 import org.apache.cxf.helpers.IOUtils;
@@ -57,6 +61,8 @@ public class SAMLAssertionHandler implements AuthenticationHandler {
      * SAML type to use when configuring context policy.
      */
     public static final String AUTH_TYPE = "SAML";
+
+    public static final String SAML_HEADER_NAME = "Authorization";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SAMLAssertionHandler.class);
 
@@ -113,6 +119,45 @@ public class SAMLAssertionHandler implements AuthenticationHandler {
             }
             return handlerResult;
         }
+
+        String authHeader = ((HttpServletRequest) request)
+                .getHeader(SAML_HEADER_NAME);
+
+        // check for full SAML assertions coming in via Headers (backport as per DDF-1472)
+        if (authHeader != null) {
+            String[] tokenizedAuthHeader = authHeader.split(" ");
+            if (tokenizedAuthHeader.length != 2) {
+                LOGGER.warn("Unexpected error - Authorization header tokenized incorrectly.");
+                return handlerResult;
+            }
+            if (!tokenizedAuthHeader[0].equals("SAML")) {
+                LOGGER.trace("Header is not a SAML assertion.");
+                return handlerResult;
+            }
+            String encodedSamlAssertion = tokenizedAuthHeader[1];
+            LOGGER.trace("Header retrieved");
+            try {
+                String tokenString = decodeSaml(encodedSamlAssertion);
+                LOGGER.trace("Header value: {}", tokenString);
+                securityToken = new SecurityToken();
+                Element thisToken = StaxUtils.read(new StringReader(tokenString))
+                        .getDocumentElement();
+                securityToken.setToken(thisToken);
+                SAMLAuthenticationToken samlToken = new SAMLAuthenticationToken(null, securityToken,
+                        realm);
+                handlerResult.setToken(samlToken);
+                handlerResult.setStatus(HandlerResult.Status.COMPLETED);
+            } catch (IOException e) {
+                LOGGER.warn("Unexpected error converting header value to string", e);
+            } catch (XMLStreamException e) {
+                LOGGER.warn(
+                        "Unexpected error converting XML string to element - proceeding without SAML token.",
+                        e);
+            }
+            return handlerResult;
+        }
+
+
 
         HttpSession session = httpRequest.getSession(false);
         if (session == null && httpRequest.getRequestedSessionId() != null) {
@@ -175,6 +220,13 @@ public class SAMLAssertionHandler implements AuthenticationHandler {
 
         result.setStatus(HandlerResult.Status.NO_ACTION);
         return result;
+    }
+
+    public static String decodeSaml(String encodedToken) throws IOException {
+        byte[] deflatedToken = Base64.decodeBase64(encodedToken);
+        InputStream is = new InflaterInputStream(new ByteArrayInputStream(deflatedToken),
+                new Inflater(false));
+        return org.apache.commons.io.IOUtils.toString(is, "UTF-8");
     }
 
     public void deleteCookie(String cookieName, HttpServletRequest request,
