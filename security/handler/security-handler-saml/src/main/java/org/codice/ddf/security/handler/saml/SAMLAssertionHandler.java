@@ -1,10 +1,10 @@
 /**
  * Copyright (c) Codice Foundation
- * <p/>
+ * <p>
  * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or any later version.
- * <p/>
+ * <p>
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details. A copy of the GNU Lesser General Public License
@@ -13,13 +13,17 @@
  */
 package org.codice.ddf.security.handler.saml;
 
+import java.io.ByteArrayInputStream; //
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 
-import javax.servlet.FilterChain;
+import javax.servlet.FilterChain; //
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -29,6 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.stream.XMLStreamException;
 
+import org.apache.commons.codec.binary.Base64; //
 import org.apache.cxf.staxutils.StaxUtils;
 import org.apache.cxf.ws.security.tokenstore.SecurityToken;
 import org.codice.ddf.security.common.HttpUtils;
@@ -43,6 +48,7 @@ import org.w3c.dom.Element;
 
 import ddf.security.SecurityConstants;
 
+
 /**
  * Checks for a SAML assertion that has been returned to us in the ddf security cookie. If it exists, it
  * is retrieved and converted into a SecurityToken.
@@ -53,10 +59,19 @@ public class SAMLAssertionHandler implements AuthenticationHandler {
      */
     public static final String AUTH_TYPE = "SAML";
 
+    public static final String SAML_HEADER_NAME = "Authorization";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SAMLAssertionHandler.class);
 
     public SAMLAssertionHandler() {
         LOGGER.debug("Creating SAML Assertion handler.");
+    }
+
+    public static String decodeSaml(String encodedToken) throws IOException {
+        byte[] deflatedToken = Base64.decodeBase64(encodedToken);
+        InputStream is = new InflaterInputStream(new ByteArrayInputStream(deflatedToken),
+                new Inflater(false));
+        return org.apache.commons.io.IOUtils.toString(is, "UTF-8");
     }
 
     @Override
@@ -66,7 +81,7 @@ public class SAMLAssertionHandler implements AuthenticationHandler {
 
     @Override
     public HandlerResult getNormalizedToken(ServletRequest request, ServletResponse response,
-            FilterChain chain, boolean resolve) {
+                                            FilterChain chain, boolean resolve) {
         HandlerResult handlerResult = new HandlerResult();
         String realm = (String) request.getAttribute(ContextPolicy.ACTIVE_REALM);
 
@@ -101,6 +116,44 @@ public class SAMLAssertionHandler implements AuthenticationHandler {
             }
             return handlerResult;
         }
+
+        String authHeader = ((HttpServletRequest) request)
+                .getHeader(SAML_HEADER_NAME);
+
+        // check for full SAML assertions coming in via Headers (backport as per DDF-1472)
+        if (authHeader != null) {
+            String[] tokenizedAuthHeader = authHeader.split(" ");
+            if (tokenizedAuthHeader.length != 2) {
+                LOGGER.warn("Unexpected error - Authorization header tokenized incorrectly.");
+                return handlerResult;
+            }
+            if (!tokenizedAuthHeader[0].equals("SAML")) {
+                LOGGER.trace("Header is not a SAML assertion.");
+                return handlerResult;
+            }
+            String encodedSamlAssertion = tokenizedAuthHeader[1];
+            LOGGER.trace("Header retrieved");
+            try {
+                String tokenString = decodeSaml(encodedSamlAssertion);
+                LOGGER.trace("Header value: {}", tokenString);
+                securityToken = new SecurityToken();
+                Element thisToken = StaxUtils.read(new StringReader(tokenString))
+                        .getDocumentElement();
+                securityToken.setToken(thisToken);
+                SAMLAuthenticationToken samlToken = new SAMLAuthenticationToken(null, securityToken,
+                        realm);
+                handlerResult.setToken(samlToken);
+                handlerResult.setStatus(HandlerResult.Status.COMPLETED);
+            } catch (IOException e) {
+                LOGGER.warn("Unexpected error converting header value to string", e);
+            } catch (XMLStreamException e) {
+                LOGGER.warn(
+                        "Unexpected error converting XML string to element - proceeding without SAML token.",
+                        e);
+            }
+            return handlerResult;
+        }
+
 
         HttpSession session = httpRequest.getSession(false);
         if (session == null && httpRequest.getRequestedSessionId() != null) {
@@ -142,7 +195,7 @@ public class SAMLAssertionHandler implements AuthenticationHandler {
      */
     @Override
     public HandlerResult handleError(ServletRequest servletRequest, ServletResponse servletResponse,
-            FilterChain chain) throws ServletException {
+                                     FilterChain chain) throws ServletException {
         HandlerResult result = new HandlerResult();
 
         HttpServletRequest httpRequest = servletRequest instanceof HttpServletRequest ?
@@ -166,7 +219,7 @@ public class SAMLAssertionHandler implements AuthenticationHandler {
     }
 
     public void deleteCookie(String cookieName, HttpServletRequest request,
-            HttpServletResponse response) {
+                             HttpServletResponse response) {
         //remove session cookie
         try {
             LOGGER.debug("Removing cookie {}", cookieName);
