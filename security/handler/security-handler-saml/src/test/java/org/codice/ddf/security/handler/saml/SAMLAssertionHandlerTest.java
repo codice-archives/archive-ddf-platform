@@ -20,13 +20,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
@@ -39,7 +34,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.IOUtils;
 import org.apache.cxf.common.util.Base64Utility;
 import org.apache.cxf.helpers.DOMUtils;
 import org.apache.cxf.rs.security.saml.DeflateEncoderDecoder;
@@ -75,27 +69,6 @@ public class SAMLAssertionHandlerTest {
         // db.setErrorHandler( new MyErrorHandler());
 
         return db.parse(is);
-    }
-
-    /**
-     * Encodes the SAML assertion as a deflated Base64 String so that it can be used as a Header.
-     *
-     * @param token SAML assertion as a string
-     * @return String
-     * @throws WSSecurityException if the assertion in the token cannot be converted
-     */
-    public static String encodeSaml(String token) throws WSSecurityException {
-        ByteArrayOutputStream tokenBytes = new ByteArrayOutputStream();
-        try (OutputStream tokenStream = new DeflaterOutputStream(tokenBytes,
-                new Deflater(Deflater.DEFAULT_COMPRESSION, false))) {
-            IOUtils.copy(new ByteArrayInputStream(token.getBytes(StandardCharsets.UTF_8)),
-                    tokenStream);
-            tokenStream.close();
-
-            return new String(Base64.encodeBase64(tokenBytes.toByteArray()));
-        } catch (IOException e) {
-            throw new WSSecurityException(WSSecurityException.ErrorCode.FAILURE, e);
-        }
     }
 
     public static String decodeSaml(String encodedToken) throws IOException {
@@ -170,7 +143,7 @@ public class SAMLAssertionHandlerTest {
         SamlAssertionWrapper wrappedAssertion = new SamlAssertionWrapper(samlToken.getToken());
         String saml = wrappedAssertion.assertionToString();
 
-        doReturn("SAML " + encodeSaml(saml)).when(request)
+        doReturn("SAML " + RestSecurity.encodeSaml(saml)).when(request)
                 .getHeader(SAMLAssertionHandler.SAML_HEADER_NAME);
 
         HandlerResult result = handler.getNormalizedToken(request, response, chain, true);
