@@ -17,8 +17,6 @@ import java.io.ByteArrayInputStream; //
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Map;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
@@ -184,8 +182,8 @@ public class SAMLAssertionHandler implements AuthenticationHandler {
      * If an error occured during the processing of the request, this method will get called. Since
      * SAML handling is typically processed first, then we can assume that there was an error with
      * the presented SAML assertion - either it was invalid, or the reference didn't match a
-     * cached assertion, etc. In order not to get stuck in a processing loop, we will remove the
-     * existing SAML assertion cookies - that will allow handling to progress moving forward.
+     * cached assertion, etc. In order not to get stuck in a processing loop, we will return a 401
+     * status code.
      *
      * @param servletRequest  http servlet request
      * @param servletResponse http servlet response
@@ -194,8 +192,8 @@ public class SAMLAssertionHandler implements AuthenticationHandler {
      * @throws ServletException
      */
     @Override
-    public HandlerResult handleError(ServletRequest servletRequest, ServletResponse servletResponse,
-                                     FilterChain chain) throws ServletException {
+    public HandlerResult handleError(ServletRequest servletRequest,
+                                     ServletResponse servletResponse, FilterChain chain) throws ServletException {
         HandlerResult result = new HandlerResult();
 
         HttpServletRequest httpRequest = servletRequest instanceof HttpServletRequest ?
@@ -208,33 +206,19 @@ public class SAMLAssertionHandler implements AuthenticationHandler {
             return result;
         }
 
-        LOGGER.debug("In error handler for saml - clearing cookies and returning no action taken.");
+        LOGGER.debug(
+                "In error handler for saml - setting status code to 401 and returning status REDIRECTED.");
 
         // we tried to process an invalid or missing SAML assertion
-        deleteCookie(SecurityConstants.SAML_COOKIE_NAME, httpRequest, httpResponse);
-        deleteCookie(SecurityConstants.SAML_COOKIE_REF, httpRequest, httpResponse);
-
-        result.setStatus(HandlerResult.Status.NO_ACTION);
-        return result;
-    }
-
-    public void deleteCookie(String cookieName, HttpServletRequest request,
-                             HttpServletResponse response) {
-        //remove session cookie
         try {
-            LOGGER.debug("Removing cookie {}", cookieName);
-            response.setContentType("text/html");
-            Cookie cookie = new Cookie(cookieName, "");
-            URL url = null;
-            url = new URL(request.getRequestURL().toString());
-            cookie.setDomain(url.getHost());
-            cookie.setMaxAge(0);
-            cookie.setPath("/");
-            cookie.setComment("EXPIRING COOKIE at " + System.currentTimeMillis());
-            response.addCookie(cookie);
-        } catch (MalformedURLException e) {
-            LOGGER.warn("Unable to delete cookie {}", cookieName, e);
+            httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            httpResponse.flushBuffer();
+        } catch (IOException e) {
+            LOGGER.debug("Failed to send auth response", e);
         }
+        result.setStatus(HandlerResult.Status.REDIRECTED);
+        return result;
     }
 
 }
