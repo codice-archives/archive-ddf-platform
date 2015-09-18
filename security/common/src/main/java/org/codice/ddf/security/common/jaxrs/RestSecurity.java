@@ -96,7 +96,7 @@ public final class RestSecurity {
     }
 
     /**
-     * Encodes the SAML assertion as a deflated Base64 String so that it can be used as a Cookie.
+     * Encodes the SAML assertion as a deflated Base64 String so that it can be used as a Header.
      *
      * @param token SAML assertion as a token
      * @return String
