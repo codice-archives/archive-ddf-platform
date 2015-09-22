@@ -105,7 +105,7 @@ public final class RestSecurity {
     public static String encodeSaml(String token) throws WSSecurityException {
         ByteArrayOutputStream tokenBytes = new ByteArrayOutputStream();
         try (OutputStream tokenStream = new DeflaterOutputStream(tokenBytes,
-                new Deflater(Deflater.DEFAULT_COMPRESSION, false))) {
+                new Deflater(Deflater.DEFAULT_COMPRESSION, true))) {
             IOUtils.copy(new ByteArrayInputStream(token.getBytes(StandardCharsets.UTF_8)),
                     tokenStream);
             tokenStream.close();
@@ -119,7 +119,7 @@ public final class RestSecurity {
     public static String decodeSaml(String encodedToken) throws IOException {
         byte[] deflatedToken = Base64.decodeBase64(encodedToken);
         InputStream is = new InflaterInputStream(new ByteArrayInputStream(deflatedToken),
-                new Inflater(false));
+                new Inflater(true));
         return IOUtils.toString(is, "UTF-8");
     }
 
