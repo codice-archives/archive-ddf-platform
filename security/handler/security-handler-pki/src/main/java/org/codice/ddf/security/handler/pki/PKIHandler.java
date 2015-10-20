@@ -20,6 +20,8 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 
 import org.codice.ddf.security.handler.api.AuthenticationHandler;
 import org.codice.ddf.security.handler.api.HandlerResult;
@@ -44,6 +46,12 @@ public class PKIHandler implements AuthenticationHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(PKIHandler.class);
 
     protected PKIAuthenticationTokenFactory tokenFactory;
+
+    protected CrlChecker crlChecker;
+
+    public PKIHandler() {
+        crlChecker = new CrlChecker();
+    }
 
     @Override
     public String getAuthenticationType() {
@@ -70,20 +78,32 @@ public class PKIHandler implements AuthenticationHandler {
         handlerResult.setSource(realm + "-" + SOURCE);
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
         String path = httpRequest.getServletPath();
         LOGGER.debug("Doing PKI authentication and authorization for path {}", path);
 
         //doesn't matter what the resolve flag is set to, we do the same action
         PKIAuthenticationToken token = extractAuthenticationInfo(httpRequest);
 
-        if (token != null) {
-            handlerResult.setToken(token);
-            handlerResult.setStatus(HandlerResult.Status.COMPLETED);
+        X509Certificate[] certs = (X509Certificate[]) request
+                .getAttribute("javax.servlet.request.X509Certificate");
+
+        // The httpResponse was null, return no action and try to process with other handlers
+        if (httpResponse == null) {
+            LOGGER.error("HTTP Response was null for request {}", path);
+            return handlerResult;
         }
+
+        // No auth info was extracted, return NO_ACTION
+        if (token == null) {
+            return handlerResult;
+        }
+
+        // CRL was specified, check against CRL and return the result
+        handlerResult = crlChecker.check(httpResponse, token, certs, handlerResult);
         return handlerResult;
     }
 
-    @Override
     public HandlerResult handleError(ServletRequest servletRequest, ServletResponse servletResponse,
             FilterChain chain) throws ServletException {
         String realm = (String) servletRequest.getAttribute(ContextPolicy.ACTIVE_REALM);
