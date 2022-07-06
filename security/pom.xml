@@ -29,7 +29,7 @@
 
     <properties>
         <ddf.platform.app.version>2.8.0-SNAPSHOT</ddf.platform.app.version>
-        <jasypt.version>1.9.0</jasypt.version>
+        <jasypt.version>1.9.2</jasypt.version>
         <wss4j.version>2.0.3</wss4j.version>
         <powermock.version>1.5.4</powermock.version>
         <powermock.agent>${settings.localRepository}/org/powermock/powermock-module-javaagent/${powermock.version}/powermock-module-javaagent-${powermock.version}.jar</powermock.agent>
