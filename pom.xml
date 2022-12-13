@@ -30,7 +30,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <cxf.version>3.0.4</cxf.version>
+        <cxf.version>3.4.10</cxf.version>
         <cxf.jaxb.version>2.2.6</cxf.jaxb.version>
         <commons-io.version>2.1</commons-io.version>
         <joda-time.version>2.2</joda-time.version>
